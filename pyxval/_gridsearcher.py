@@ -33,60 +33,64 @@ __all__ = ['GridSearcher']
 class GridSearcher(CrossValidator):
 
     def __init__(self,
-            classifiercls,
+            classifier_cls,
             folds,
-            ckwargs={},
-            scorercls=PerfStats,
-            skwargs={'optstat': PerfStats.MINSTAT},
-            gskwargs={}):
-        super(GridSearcher, self).__init__(classifiercls, folds, ckwargs)
-        # self.ckwargs, and self.classifiercls are in CrossValidator
-        self.scorercls = scorercls
-        self.skwargs = skwargs
-        self.gskwargs = gskwargs
+            gridsearch_kwargs,
+            classifier_kwargs={},
+            scorer_cls=PerfStats,
+            scorer_kwargs={'optstat': PerfStats.MINSTAT},
+            learn_func=None,
+            predict_func=None,
+            weight_func=None):
+
+        super(GridSearcher, self).__init__(classifier_cls, folds, classifier_kwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weight_func)
+        # self.classifier_kwargs, and self.classifier_cls are in CrossValidator
+        self.scorer_cls = scorer_cls
+        self.scorer_kwargs = scorer_kwargs
+        self.gridsearch_kwargs = gridsearch_kwargs
         self.classifier = None
         self.__computed = False
 
-    def gridsearch(self, x, y, ckwargs={}, extra=None):
+    def gridsearch(self, x, y, classifier_kwargs={}, extra=None):
         if extra is not None:
             if not isinstance(extra, str) and not isinstance(extra, FunctionType):
-                raise ValueError('the `extra\' argument takes either a string or a function.')
+                raise ValueError('the `extra\' argument takes either a string or a _function.')
 
-        ret = { 'stats': self.scorercls(**self.skwargs) }
+        ret = { 'stats': self.scorer_cls(**self.scorer_kwargs) }
 
-        if len(self.gskwargs) == 1:
-            k0, params = self.gskwargs.items()[0]
+        if len(self.gridsearch_kwargs) == 1:
+            k0, params = self.gridsearch_kwargs.items()[0]
             bestparams = {}
             for p0 in params:
-                ckwargs[k0] = p0
-                r = GridSearcher.crossvalidate(self, x, y, ckwargs=ckwargs)
-                if r['stats'] > ret['stats']:
+                classifier_kwargs[k0] = p0
+                r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=classifier_kwargs)
+                if r.stats > ret['stats']:
                     ret = r
-                    bestparams = deepcopy(ckwargs)
-            kwargs = deepcopy(self.ckwargs)
+                    bestparams = deepcopy(classifier_kwargs)
+            kwargs = deepcopy(self.classifier_kwargs)
             for k, v in bestparams.items():
                 kwargs[k] = v
             ret['kwargs'] = kwargs
-        elif len(self.gskwargs) == 2:
-            gsp = self.gskwargs.items()
+        elif len(self.gridsearch_kwargs) == 2:
+            gsp = self.gridsearch_kwargs.items()
             k0, params0 = gsp[0]
             k1, params1 = gsp[1]
             bestparams = {}
             for p0 in params0:
                 for p1 in params1:
-                    ckwargs[k0] = p0, ckwargs[k1] = p1
-                    r = GridSearcher.crossvalidate(self, x, y, ckwargs=ckwargs)
-                    if r['stats'] > ret['stats']:
+                    classifier_kwargs[k0] = p0, classifier_kwargs[k1] = p1
+                    r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=classifier_kwargs)
+                    if r.stats > ret['stats']:
                         ret = r
-                        bestparams = deepcopy(ckwargs)
-            kwargs = deepcopy(self.ckwargs)
+                        bestparams = deepcopy(classifier_kwargs)
+            kwargs = deepcopy(self.classifier_kwargs)
             for k, v in bestparams.items():
                 kwargs[k] = v
             ret['kwargs'] = kwargs
         else:
             raise ValueError('We only support up to a 2D grid search at this time')
 
-        ret['extra'] = GridSearcher.crossvalidate(self, x, y, ckwargs=ret['kwargs'], extra=extra)['extra'] if extra is not None else None
+        ret['extra'] = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=ret['kwargs'], extra=extra)['extra'] if extra is not None else None
 
 #         print ret['kwargs']
 #         print '\n'.join([str(s) for s in ret['stats'].tolist()])
@@ -99,9 +103,9 @@ class GridSearcher(CrossValidator):
         # print 'gridsearch stats:', gsret['stats']
         # print 'optimum parameters:', gsret['kwargs']
 
-        self.classifier = self.classifiercls(**gsret['kwargs'])
+        self.classifier = self.classifier_cls(**gsret['kwargs'])
         # I don't like unmangling the private name, but here it is..
-        lret = getattr(self.classifier, self._CrossValidator__learnfunc)(x, y)
+        lret = getattr(self.classifier, self._CrossValidator__learn_func)(x, y)
 
         self.__computed = True
 
@@ -111,4 +115,4 @@ class GridSearcher(CrossValidator):
         if self.__computed == False:
             raise RuntimeError('No model computed')
 
-        return getattr(self.classifier, self._CrossValidator__predictfunc)(x)
+        return getattr(self.classifier, self._CrossValidator__predict_func)(x)

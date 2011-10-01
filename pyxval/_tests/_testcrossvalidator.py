@@ -8,25 +8,19 @@ Created on 10/1/11
 
 __author__ = 'brent payne'
 
-import unittest
-from pyxval._crossvalidator import CrossValidator
-from pyxval._perfstats import PerfStats
-
 import random
 import unittest
+
 import numpy as np
 
+from pyxval import CrossValidator
+from pyxval import PerfStats
+
+from _optimist import Optimist
 
 __all__ = ['TestCrossValidator']
 
 class TestCrossValidator(unittest.TestCase):
-    class TestMethod_ReturnOne():
-        def __init__(self):
-            pass
-        def predict(self, x):
-            return [1]*len(x)
-        def train(self, x, y):
-            pass
 
     def setUp(self):
         self.x = np.random.rand(10,3)
@@ -35,7 +29,7 @@ class TestCrossValidator(unittest.TestCase):
         random.shuffle(self.y)
 
     def test_using_numpy_ndarray_and_lists(self):
-        xvalor = CrossValidator(TestCrossvalidator.TestMethod_ReturnOne, 10, learnfunc=TestCrossvalidator.TestMethod_ReturnOne.train)
+        xvalor = CrossValidator(Optimist, 10, learn_func=Optimist.train)
         xlist = [list(row) for row in list(self.x)]
 
         #test using ndarray types for x and y

@@ -1,5 +1,5 @@
 
-from unittest import main as _unittest_main
+import unittest as _ut
 
 from _crossvalidator import *
 from _gridsearcher import *
@@ -8,7 +8,6 @@ from _normalvalue import *
 from _perfstats import *
 from _selectinggridsearcher import *
 from _selectingnestedcrossvalidator import *
-from _tests import *
 
 __all__ = []
 __all__ += _crossvalidator.__all__
@@ -19,5 +18,7 @@ __all__ += _perfstats.__all__
 __all__ += _selectinggridsearcher.__all__
 __all__ += _selectingnestedcrossvalidator.__all__
 
-def test():
-   _unittest_main()
+def test(verbosity=0):
+    import _tests
+    suite = _ut.TestLoader().loadTestsFromModule(_tests)
+    _ut.TextTestRunner(verbosity=verbosity).run(suite)

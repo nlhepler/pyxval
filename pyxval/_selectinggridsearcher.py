@@ -33,17 +33,20 @@ __all__ = ['SelectingGridSearcher']
 class SelectingGridSearcher(GridSearcher):
 
     def __init__(self,
-            classifiercls,
-            selectorcls,
+            classifier_cls,
+            selector_cls,
             folds,
-            ckwargs={},
-            fskwargs={},
-            scorercls=PerfStats,
-            skwargs={ 'optstat': PerfStats.MINSTAT },
-            gskwargs={}):
-        super(SelectingGridSearcher, self).__init__(classifiercls, folds, ckwargs, scorercls, skwargs, gskwargs)
+            gridsearch_kwargs,
+            classifier_kwargs={},
+            fscorer_kwargs={},
+            scorer_cls=PerfStats,
+            scorer_kwargs={ 'optstat': PerfStats.MINSTAT },
+            learn_func=None,
+            predict_func=None,
+            weight_func=None):
+        super(SelectingGridSearcher, self).__init__(classifier_cls, folds, gridsearch_kwargs, classifier_kwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weight_func)
         self.__selected = False
-        self.selector = selectorcls(**fskwargs)
+        self.selector = selector_cls(**fscorer_kwargs)
 
     def select(self, x, y):
         self.selector.select(x, y)
@@ -59,10 +62,10 @@ class SelectingGridSearcher(GridSearcher):
             raise StandardError('Selection hasn\'t yet been performed.')
         return self.selector.features()
 
-    def gridsearch(self, x, y, ckwargs={}, extra=None):
+    def gridsearch(self, x, y, classifier_kwargs={}, extra=None):
         SelectingGridSearcher.select(self, x, y)
         x = self.selector.subset(x)
-        return super(SelectingGridSearcher, self).gridsearch(x, y, ckwargs=ckwargs, extra=extra)
+        return super(SelectingGridSearcher, self).gridsearch(x, y, classifier_kwargs=classifier_kwargs, extra=extra)
 
     def learn(self, x, y):
         SelectingGridSearcher.select(self, x, y)
