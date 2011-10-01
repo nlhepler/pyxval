@@ -21,13 +21,14 @@
 
 import numpy as np
 
+from _basescorer import BaseScorer
 from _normalvalue import NormalValue
 
 
 __all__ = ['PerfStats']
 
 
-class PerfStats(object):
+class PerfStats(BaseScorer):
     CONTINUOUS  = 0
     DISCRETE    = 1
 
@@ -43,14 +44,21 @@ class PerfStats(object):
     RSQUARED            = 8
     RMSE                = 9
 
-    def __init__(self, mode=None):
+    def __init__(self, mode=None, optstat=PerfStats.MINSTAT):
         if mode is None:
             mode = PerfStats.DISCRETE
 
         if mode not in (PerfStats.CONTINUOUS, PerfStats.DISCRETE):
-            raise RuntimeError('PerfStat mode must be one of either PerfStats.CONTINUOUS or PerfStats.DISCRETE')
+            raise RuntimeError('PerfStats mode must be one of either PerfStats.CONTINUOUS or PerfStats.DISCRETE')
+
+        if optstat is None:
+            optstat = PerfStats.MINSTAT
+
+        if optstat not in xrange(7):
+            raise ValueError('PerfStats optstat must be one of PerfStats.{ACCURACY, PPV, PRECISION, NPV, SENSITIVITY, RECALL, SPECIFICITY, TNR, FSCORE, MINSTAT}')
 
         self.mode = mode
+        self.optstat = optstat
 
         if self.mode == PerfStats.DISCRETE:
             self.accuracy = NormalValue(float)
@@ -180,6 +188,15 @@ class PerfStats(object):
 
     def __str__(self):
         return str(PerfStats.todict(self))
+
+    def __cmp__(self, other):
+        assert(isinstance(other, PerfStats))
+        if self.get(self.optstat) == other.get(other.optstat):
+            return 0
+        elif self.get(self.optstat) < other.get(other.optstat):
+            return -1
+        else:
+            return 1
 
     def __unicode__(self):
         return unicode(PerfStats.todict(self))
