@@ -17,7 +17,7 @@ import random
 import unittest
 import numpy as np
 
-class TestCrossvalidator(unittest.TestCase):
+class TestCrossValidator(unittest.TestCase):
     class TestMethod_ReturnOne():
         def __init__(self):
             pass
