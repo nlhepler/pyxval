@@ -100,7 +100,7 @@ class CrossValidator(object):
         if predictfunc is None:
             raise ValueError('No known prediction mechanism in base class `%s\'' % repr(classifiercls))
         # we don't care if the weightfunc isn't found
-        if weightfunc is None:
+        if weightfunc is not None:
             for m in weightfunc:
                 if m in classifiercls_dir:
                     weightfunc = m

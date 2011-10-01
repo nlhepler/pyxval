@@ -174,12 +174,15 @@ class PerfStats(BaseScorer):
 
     @staticmethod
     def ystoconfusionmatrix(truth, preds):
+        if not isinstance(truth, np.ndarray):
+            truth = np.array(truth)
+        if not isinstance(preds, np.ndarray):
+            preds = np.array(preds)
+
         tps = truth > 0.
-        tns = truth <= 0.
         pps = preds > 0.
-        pns = preds <= 0.
                                                                # true pos    true neg    false pos   false neg
-        tp, tn, fp, fn = map(lambda a: np.sum(np.multiply(*a)), [(tps, pps), (tns, pns), (tns, pps), (tps, pns)])
+        tp, tn, fp, fn = map(lambda a: np.sum(np.multiply(*a)), [(tps, pps), (1-tps, 1-pps), (1-tps, pps), (tps, 1-pps)])
 
         return tp, tn, fp, fn
 
