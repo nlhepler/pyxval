@@ -163,7 +163,7 @@ class CrossValidator(object):
 
             classifier = self.classifiercls(**kwargs)
 
-            l = apply(getattr(classifier, self.__learnfunc_name), (xin, yin))
+            l = apply(getattr(classifier, self.__learnfunc), (xin, yin))
             if l is not None:
                 lret.append(l)
 
