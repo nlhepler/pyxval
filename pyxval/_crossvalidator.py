@@ -24,6 +24,8 @@ from itertools import chain
 from math import floor
 from random import shuffle
 from types import FunctionType
+import types
+import numpy
 
 from _perfstats import PerfStats
 
@@ -36,7 +38,7 @@ class CrossValidator(object):
     CONTINUOUS = PerfStats.CONTINUOUS
     DISCRETE   = PerfStats.DISCRETE
 
-    def __init__(self, classifiercls, folds, cv={}, mode=None):
+    def __init__(self, classifiercls, folds, cv={}, mode=None, train_member_function=None, predict_member_function=None, weight_member_function=None):
         if mode is None:
             mode = CrossValidator.DISCRETE
         self.classifiercls = classifiercls
@@ -44,25 +46,45 @@ class CrossValidator(object):
         self.cv = cv
         self.mode = mode
         classifiercls_dir = dir(classifiercls)
-        self.__learnfunc = None
-        for m in ('learn', 'compute'):
-            if m in classifiercls_dir:
-                self.__learnfunc = m
-                break
-        if self.__learnfunc is None:
+        self.__learnfunc_name = None
+        if train_member_function is None:
+            for m in ('learn', 'compute'):
+                if m in classifiercls_dir:
+                    self.__learnfunc_name = m
+                    break
+        else:
+            if isinstance(train_member_function,types.StringTypes) and train_member_function in classifiercls_dir:
+                self.__learnfunc_name = train_member_function
+            elif isinstance(train_member_function,types.MethodType) and train_member_function.__name__ in classifiercls_dir:
+                self.__learnfunc_name = train_member_function.__name__
+        if self.__learnfunc_name is None:
             raise ValueError('No known learning mechanism in base class `%s\'' % repr(classifiercls))
         self.__predictfunc = None
-        for m in ('predict', 'pred'):
-            if m in classifiercls_dir:
-                self.__predictfunc = m
-                break
+        if predict_member_function is None:
+            for m in ('predict', 'pred'):
+                if m in classifiercls_dir:
+                    self.__predictfunc = m
+                    break
+        else:
+            if isinstance(predict_member_function,types.StringTypes) and predict_member_function in classifiercls_dir:
+                self.__learnfunc_name = predict_member_function
+            elif isinstance(predict_member_function,types.MethodType) and predict_member_function.__name__ in classifiercls_dir:
+                self.__learnfunc_name = predict_member_function.__name__
         if self.__predictfunc is None:
             raise ValueError('No known prediction mechanism in base class `%s\'' % repr(classifiercls))
         self.__weightfunc = None
-        for m in ('weights',):
-            if m in classifiercls_dir:
-                self.__weightfunc = m
-                break
+        if weight_member_function is None:
+            for m in ('weights',):
+                if m in classifiercls_dir:
+                    self.__weightfunc = m
+                    break
+        else:
+            if isinstance(weight_member_function,types.StringTypes) and weight_member_function in classifiercls_dir:
+                self.__weightfunc = predict_member_function
+            elif isinstance(weight_member_function,types.MethodType) and weight_member_function.__name__ in classifiercls_dir:
+                self.__weightfunc = predict_member_function.__name__
+
+
         if self.__weightfunc is None and self.mode == CrossValidator.CONTINUOUS:
             raise ValueError('No known weight-retrieval mechanism in base class `%s\'' % repr(classifiercls))
 
@@ -75,7 +97,16 @@ class CrossValidator(object):
         assert(len(p) == l)
         return p
 
-    def crossvalidate(self, x, y, cv={}, extra=None):
+    def crossvalidate(self, data, x, y, cv={}, extra=None):
+        '''
+        Runs crossvalidation on the provided data.  The length of the :py:obj:`x` array should be identical to :py:obj:`y`
+        and will be used to partition the lists by index.
+        :param x: observations, needs to implement __len__ and __getitem__ aka len(x), x[i]
+        :param y: expected output, needs to implement __getitem__, aka y[i]
+        :param cv: a dictionary of ... @todo figure this out
+        :param extra: @todo figure this out
+        :returns: @todo figure this out
+        '''
         if extra is not None:
             if not isinstance(extra, str) and not isinstance(extra, FunctionType):
                 raise ValueError('the `extra\' argument takes either a string or a function.')
@@ -83,7 +114,7 @@ class CrossValidator(object):
         kwargs = deepcopy(self.cv)
         kwargs.update(cv)
 
-        nrow, _ = x.shape
+        nrow = len(x)
 
         p = CrossValidator.__partition(nrow, self.folds)
 
@@ -95,17 +126,25 @@ class CrossValidator(object):
             inpart = [i for i in xrange(nrow) if p[i] != f]
             outpart = [i for i in xrange(nrow) if p[i] == f]
 
-            xin = x[inpart, :]
-            yin = y[inpart]
+            if(isinstance(x, numpy.ndarray)):
+                xin = x[inpart, :]
+                yin = y[inpart, :]
+            else:
+                xin = [x[i] for i in inpart]
+                yin = [y[i] for i in inpart]
 
-            xout = x[outpart, :]
-            yout = y[outpart]
+            if(isinstance(x, numpy.ndarray) or isinstance(x, numpy.array)):
+                xout = x[outpart, :]
+                yout = y[outpart, :]
+            else:
+                xout = [x[i] for i in outpart]
+                yout = [y[i] for i in outpart]
 
             # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
 
             classifier = self.classifiercls(**kwargs)
 
-            l = apply(getattr(classifier, self.__learnfunc), (xin, yin))
+            l = apply(getattr(classifier, self.__learnfunc_name), (xin, yin))
             if l is not None:
                 lret.append(l)
 
