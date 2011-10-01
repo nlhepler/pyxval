@@ -6,16 +6,18 @@ Created on 10/1/11
 @author: brent payne
 '''
 
+__author__ = 'brent payne'
+
 import unittest
 from pyxval._crossvalidator import CrossValidator
 from pyxval._perfstats import PerfStats
 
-__author__ = 'brent payne'
-
-
 import random
 import unittest
 import numpy as np
+
+
+__all__ = ['TestCrossValidator']
 
 class TestCrossValidator(unittest.TestCase):
     class TestMethod_ReturnOne():
@@ -52,10 +54,6 @@ class TestCrossValidator(unittest.TestCase):
         #using ndarray for x and list for y
         rv = xvalor.crossvalidate(self.x, self.y)
         self.assertEquals(rv.stats.get(PerfStats.ACCURACY).mu, 0.5)
-
-
-        
-
 
 
 if __name__ == '__main__':
