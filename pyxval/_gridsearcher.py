@@ -43,10 +43,10 @@ class GridSearcher(CrossValidator):
             predict_func=None,
             weight_func=None):
 
-        super(GridSearcher, self).__init__(classifier_cls, folds, classifier_kwargs, scorercls, scorer_kwargs, learn_func, predictfunc, weightfunc)
+        super(GridSearcher, self).__init__(classifier_cls, folds, classifier_kwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weight_func)
         # self.classifier_kwargs, and self.classifier_cls are in CrossValidator
-        self.scorer_cls = scorercls
-        self.scorer_kwargs = skwargs
+        self.scorer_cls = scorer_cls
+        self.scorer_kwargs = scorer_kwargs
         self.gridsearch_kwargs = gridsearch_kwargs
         self.classifier = None
         self.__computed = False
@@ -63,7 +63,7 @@ class GridSearcher(CrossValidator):
             bestparams = {}
             for p0 in params:
                 classifier_kwargs[k0] = p0
-                r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=ckwargs)
+                r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=classifier_kwargs)
                 if r.stats > ret['stats']:
                     ret = r
                     bestparams = deepcopy(classifier_kwargs)
@@ -78,8 +78,8 @@ class GridSearcher(CrossValidator):
             bestparams = {}
             for p0 in params0:
                 for p1 in params1:
-                    classifier_kwargs[k0] = p0, ckwargs[k1] = p1
-                    r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=ckwargs)
+                    classifier_kwargs[k0] = p0, classifier_kwargs[k1] = p1
+                    r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=classifier_kwargs)
                     if r.stats > ret['stats']:
                         ret = r
                         bestparams = deepcopy(classifier_kwargs)

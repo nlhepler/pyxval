@@ -48,45 +48,45 @@ class CrossValidator(object):
             predict_func=None,
             weight_func=None):
 
-        self.classifier_cls = classifiercls
+        self.classifier_cls = classifier_cls
         self.folds = folds
-        self.classifier_kwargs = ckwargs
-        self.scorer_cls = scorercls
+        self.classifier_kwargs = classifier_kwargs
+        self.scorer_cls = scorer_cls
         self.scorer_kwargs = {}
-        self.__learn_func, self.__predictfunc, self.__weightfunc = \
-                CrossValidator.__find_funcs(classifier_cls, learnfunc, predictfunc, weightfunc)
+        self.__learn_func, self.__predict_func, self.__weight_func = \
+                CrossValidator.__find_funcs(classifier_cls, learn_func, predict_func, weight_func)
 
     @staticmethod
-    def __find_funcs(classifier_cls, learnfunc, predictfunc, weightfunc):
-        classifier_cls_dir = dir(classifiercls)
+    def __find_funcs(classifier_cls, learn_func, predict_func, weight_func):
+        classifier_cls_dir = dir(classifier_cls)
 
         # set up some default places to look for _functions
         if learn_func is None:
             learn_func = ('learn', 'compute')
-        elif isinstance(learn_func, types.MethodType) or isinstance(learnfunc, types.FunctionType):
-            learn_func = (learnfunc.__name__,)
+        elif isinstance(learn_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
+            learn_func = (learn_func.__name__,)
         elif isinstance(learn_func, types.StringTypes):
-            learn_func = (learnfunc,)
+            learn_func = (learn_func,)
         else:
-            raise ValueError('learn_func has an unhandled type %s' % type(learnfunc))
+            raise ValueError('learn_func has an unhandled type %s' % type(learn_func))
 
         if predict_func is None:
             predict_func = ('predict', 'pred')
-        elif isinstance(predict_func, types.MethodType) or isinstance(learnfunc, types.FunctionType):
-            predict_func = (predictfunc.__name__,)
+        elif isinstance(predict_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
+            predict_func = (predict_func.__name__,)
         elif isinstance(predict_func, types.StringTypes):
-            predict_func = (predictfunc,)
+            predict_func = (predict_func,)
         else:
-            raise ValueError('predict_func has an unhandled type %s' % type(predictfunc))
+            raise ValueError('predict_func has an unhandled type %s' % type(predict_func))
 
         if weight_func is None:
             weight_func = None # ('weights',) # if weights is None, don't bother looking
-        elif isinstance(weight_func, types.MethodType) or isinstance(learnfunc, types.FunctionType):
-            weight_func = (weightfunc.__name__,)
+        elif isinstance(weight_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
+            weight_func = (weight_func.__name__,)
         elif isinstance(weight_func, types.StringTypes):
-            weight_func = (weightfunc,)
+            weight_func = (weight_func,)
         else:
-            raise ValueError('weight_func has an unhandled type %s' % type(weightfunc))
+            raise ValueError('weight_func has an unhandled type %s' % type(weight_func))
 
         # look for these _functions
         lf = None

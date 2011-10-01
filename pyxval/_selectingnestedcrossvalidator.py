@@ -37,7 +37,7 @@ class SelectingNestedCrossValidator(CrossValidator):
             folds,
             gridsearch_kwargs,
             classifier_kwargs={},
-            fscorer_kwargs={},
+            selector_kwargs={},
             scorer_cls=PerfStats,
             scorer_kwargs={ 'optstat': PerfStats.MINSTAT },
             learn_func=None,
@@ -45,17 +45,17 @@ class SelectingNestedCrossValidator(CrossValidator):
             weight_func=None):
 
         ncvkwargs = {
-            'classifier_cls': classifiercls,
-            'selector_cls': selectorcls,
+            'classifier_cls': classifier_cls,
+            'selector_cls': selector_cls,
             'folds': folds - 1,
             'gridsearch_kwargs': gridsearch_kwargs,
-            'classifier_kwargs': ckwargs,
+            'classifier_kwargs': classifier_kwargs,
             'fscorer_kwargs': selector_kwargs,
-            'scorer_cls': scorercls,
-            'scorer_kwargs': skwargs,
-            'learn_func': learnfunc,
-            'predict_func': predictfunc,
-            'weight_func': weightfunc
+            'scorer_cls': scorer_cls,
+            'scorer_kwargs': scorer_kwargs,
+            'learn_func': learn_func,
+            'predict_func': predict_func,
+            'weight_func': weight_func
         }
 
-        super(SelectingNestedCrossValidator, self).__init__(SelectingGridSearcher, folds, ncvkwargs, scorer_cls, scorer_kwargs, learn_func, predictfunc, weightfunc)
+        super(SelectingNestedCrossValidator, self).__init__(SelectingGridSearcher, folds, ncvkwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weight_func)
