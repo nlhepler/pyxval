@@ -36,7 +36,7 @@ class TestCrossValidator(unittest.TestCase):
         random.shuffle(self.y)
 
     def test_using_numpy_ndarray_and_lists(self):
-        xvalor = CrossValidator(TestCrossvalidator.TestMethod_ReturnOne, 10, learnfunc=TestCrossvalidator.TestMethod_ReturnOne.train)
+        xvalor = CrossValidator(TestCrossValidator.TestMethod_ReturnOne, 10, learnfunc=TestCrossValidator.TestMethod_ReturnOne.train)
         xlist = [list(row) for row in list(self.x)]
 
         #test using ndarray types for x and y
