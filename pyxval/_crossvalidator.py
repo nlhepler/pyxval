@@ -19,12 +19,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import types
+
 from copy import deepcopy
 from itertools import chain
 from math import floor
 from random import shuffle
-from types import FunctionType
 
+import numpy as np
+
+from _crossvalidatorresult import CrossValidatorResult
 from _perfstats import PerfStats
 
 
@@ -43,6 +47,7 @@ class CrossValidator(object):
             learnfunc=None,
             predictfunc=None,
             weightfunc=None):
+
         self.classifiercls = classifiercls
         self.folds = folds
         self.ckwargs = ckwargs
@@ -58,16 +63,28 @@ class CrossValidator(object):
         # set up some default places to look for functions
         if learnfunc is None:
             learnfunc = ('learn', 'compute')
-        else:
+        elif isinstance(learnfunc, types.MethodType):
+            learnfunc = (learnfunc.__name__,)
+        elif isinstance(learnfunc, types.StringTypes):
             learnfunc = (learnfunc,)
+        else:
+            raise ValueError('learnfunc has an unhandled type %s' % type(learnfunc))
         if predictfunc is None:
             predictfunc = ('predict', 'pred')
-        else:
+        elif isinstance(predictfunc, types.MethodType):
+            predictfunc = (predictfunc.__name__,)
+        elif isinstance(predictfunc, types.StringTypes):
             predictfunc = (predictfunc,)
-        if weightfunc is None:
-            weightfunc = ('weights',)
         else:
+            raise ValueError('predictfunc has an unhandled type %s' % type(predictfunc))
+        if weightfunc is None:
+            weightfunc = None # ('weights',) # if weights is None, don't bother looking
+        elif isinstance(weightfunc, types.MethodType):
+            weightfunc = (weightfunc.__name__,)
+        elif isinstance(weightfunc, types.StringTypes):
             weightfunc = (weightfunc,)
+        else:
+            raise ValueError('weightfunc has an unhandled type %s' % type(weightfunc))
 
         # look for these functions
         for m in learnfunc:
@@ -100,14 +117,23 @@ class CrossValidator(object):
         return p
 
     def crossvalidate(self, x, y, ckwargs={}, extra=None):
+        '''
+        Runs crossvalidation on the provided data.  The length of the :py:obj:`x` array should be identical to :py:obj:`y`
+        and will be used to partition the lists by index.
+        :param x: observations, needs to implement __len__ and __getitem__ aka len(x), x[i]
+        :param y: expected output, needs to implement __getitem__, aka y[i]
+        :param ckwargs: a dictionary of parameters to pass to the classifier 
+        :param extra: @todo extra information to pull out of the classifier
+        :returns: @todo figure this out
+        '''
         if extra is not None:
-            if not isinstance(extra, str) and not isinstance(extra, FunctionType):
-                raise ValueError('the `extra\' argument takes either a string or a function.')
+            if not isinstance(extra, types.StringTypes) and not isinstance(extra, types.MethodType):
+                raise ValueError('the `extra\' argument takes either a string or a method.')
 
         kwargs = deepcopy(self.ckwargs)
         kwargs.update(ckwargs)
 
-        nrow, _ = x.shape
+        nrow = len(x)
 
         p = CrossValidator.__partition(nrow, self.folds)
 
@@ -119,17 +145,25 @@ class CrossValidator(object):
             inpart = [i for i in xrange(nrow) if p[i] != f]
             outpart = [i for i in xrange(nrow) if p[i] == f]
 
-            xin = x[inpart, :]
-            yin = y[inpart]
+            if isinstance(x, np.ndarray):
+                xin = x[inpart, :]
+                yin = y[inpart, :]
+            else:
+                xin = [x[i] for i in inpart]
+                yin = [y[i] for i in inpart]
 
-            xout = x[outpart, :]
-            yout = y[outpart]
+            if isinstance(x, np.ndarray):
+                xout = x[outpart, :]
+                yout = y[outpart, :]
+            else:
+                xout = [x[i] for i in outpart]
+                yout = [y[i] for i in outpart]
 
             # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
 
             classifier = self.classifiercls(**kwargs)
 
-            l = apply(getattr(classifier, self.__learnfunc), (xin, yin))
+            l = apply(getattr(classifier, self.__learnfunc_name), (xin, yin))
             if l is not None:
                 lret.append(l)
 
@@ -137,9 +171,9 @@ class CrossValidator(object):
 
             # do this after both learning and prediction just in case either performs some necessary computation
             if extra is not None:
-                if isinstance(extra, str):
+                if isinstance(extra, types.StringTypes):
                     xtra.append(apply(getattr(classifier, extra),))
-                elif isinstance(extra, FunctionType):
+                elif isinstance(extra, types.MethodType):
                     xtra.append(apply(extra, (classifier,)))
 
             weights = None
@@ -151,8 +185,8 @@ class CrossValidator(object):
 
             stats.append(yout, preds, weights)
 
-        return {
-            'learn': lret if len(lret) else None,
-            'stats': stats,
-            'extra': xtra if len(xtra) else None
-        }
+        return CrossValidatorResult(
+            lret if len(lret) else None,
+            stats,
+            xtra if len(xtra) else None
+        )

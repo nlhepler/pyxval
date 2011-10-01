@@ -1,0 +1,8 @@
+*.project
+*.pydevproject
+*.pyc
+*.model
+*.range
+.idea
+*~
+*#
