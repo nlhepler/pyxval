@@ -20,7 +20,6 @@ from _optimist import Optimist
 
 __all__ = ['TestCrossValidator']
 
-
 class TestCrossValidator(unittest.TestCase):
 
     def setUp(self):
