@@ -46,7 +46,6 @@ class TestCrossValidator(unittest.TestCase):
         rv = xvalor.crossvalidate(xlist, self.y)
         self.assertEqual(rv.stats.get(PerfStats.ACCURACY).mu, 0.5)
 
-
         #using list for x and ndarray for y
         rv = xvalor.crossvalidate(xlist, np.array(self.y))
         self.assertEqual(rv.stats.get(PerfStats.ACCURACY).mu, 0.5)

@@ -1,20 +1,20 @@
 # pyxval :: (Python CROSS-VALidation) python libraries containing some useful
 # machine learning interfaces and utilities for regression and discrete
 # prediction (including cross-validation, grid-search, and performance
-# statistics) 
-# 
-# Copyright (C) 2011 N Lance Hepler <nlhepler@gmail.com> 
-# 
+# statistics)
+#
+# Copyright (C) 2011 N Lance Hepler <nlhepler@gmail.com>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
@@ -69,6 +69,7 @@ class CrossValidator(object):
             learnfunc = (learnfunc,)
         else:
             raise ValueError('learnfunc has an unhandled type %s' % type(learnfunc))
+
         if predictfunc is None:
             predictfunc = ('predict', 'pred')
         elif isinstance(predictfunc, types.MethodType):
@@ -77,6 +78,7 @@ class CrossValidator(object):
             predictfunc = (predictfunc,)
         else:
             raise ValueError('predictfunc has an unhandled type %s' % type(predictfunc))
+
         if weightfunc is None:
             weightfunc = None # ('weights',) # if weights is None, don't bother looking
         elif isinstance(weightfunc, types.MethodType):
@@ -93,12 +95,14 @@ class CrossValidator(object):
                 break
         if learnfunc is None:
             raise ValueError('No known learning mechanism in base class `%s\'' % repr(classifiercls))
+
         for m in predictfunc:
             if m in classifiercls_dir:
                 predictfunc = m
                 break
         if predictfunc is None:
             raise ValueError('No known prediction mechanism in base class `%s\'' % repr(classifiercls))
+
         # we don't care if the weightfunc isn't found
         if weightfunc is not None:
             for m in weightfunc:
@@ -123,7 +127,7 @@ class CrossValidator(object):
         and will be used to partition the lists by index.
         :param x: observations, needs to implement __len__ and __getitem__ aka len(x), x[i]
         :param y: expected output, needs to implement __getitem__, aka y[i]
-        :param ckwargs: a dictionary of parameters to pass to the classifier 
+        :param ckwargs: a dictionary of parameters to pass to the classifier
         :param extra: @todo extra information to pull out of the classifier
         :returns: @todo figure this out
         '''
