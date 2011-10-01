@@ -190,3 +190,4 @@ class CrossValidator(object):
             stats,
             xtra if len(xtra) else None
         )
+
