@@ -44,7 +44,7 @@ class PerfStats(BaseScorer):
     RSQUARED            = 8
     RMSE                = 9
 
-    def __init__(self, mode=None, optstat=PerfStats.MINSTAT):
+    def __init__(self, mode=None, optstat=None):
         if mode is None:
             mode = PerfStats.DISCRETE
 
