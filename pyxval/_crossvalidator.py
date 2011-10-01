@@ -147,16 +147,16 @@ class CrossValidator(object):
 
             if isinstance(x, np.ndarray):
                 xin = x[inpart, :]
-                yin = y[inpart, :]
+                xout = x[outpart, :]
             else:
                 xin = [x[i] for i in inpart]
-                yin = [y[i] for i in inpart]
+                xout = [x[i] for i in outpart]
 
-            if isinstance(x, np.ndarray):
-                xout = x[outpart, :]
+            if isinstance(y, np.ndarray):
+                yin = y[inpart, :]
                 yout = y[outpart, :]
             else:
-                xout = [x[i] for i in outpart]
+                yin = [y[i] for i in inpart]
                 yout = [y[i] for i in outpart]
 
             # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
