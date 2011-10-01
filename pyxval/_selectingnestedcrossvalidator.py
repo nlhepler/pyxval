@@ -31,25 +31,25 @@ __all__ = ['SelectingNestedCrossValidator']
 
 class SelectingNestedCrossValidator(CrossValidator):
 
-    ACCURACY            = PerfStats.ACCURACY
-    PPV, PRECISION      = PerfStats.PPV, PerfStats.PRECISION
-    NPV                 = PerfStats.NPV
-    SENSITIVITY, RECALL = PerfStats.SENSITIVITY, PerfStats.RECALL
-    SPECIFICITY, TNR    = PerfStats.SPECIFICITY, PerfStats.TNR
-    FSCORE              = PerfStats.FSCORE
-    MINSTAT             = PerfStats.MINSTAT
+    def __init__(self,
+            classifiercls,
+            selectorcls,
+            folds,
+            ckwargs={},
+            fskwargs={},
+            scorercls=PerfStats,
+            skwargs={ 'optstat': PerfStats.MINSTAT },
+            gskwargs={}):
 
-    def __init__(self, classifiercls, selectorcls, folds, cv={}, mode=None, optstat=PerfStats.MINSTAT, gs={}, fs={}):
-
-        ncv = {
+        ncvkwargs = {
             'classifiercls': classifiercls,
             'selectorcls': selectorcls,
             'folds': folds - 1,
-            'optstat': optstat,
-            'cv': cv,
-            'mode': mode,
-            'gs': gs,
-            'fs': fs
+            'ckwargs': ckwargs,
+            'fskwargs': fskwargs,
+            'scorercls': scorercls,
+            'skwargs': skwargs,
+            'gskwargs': gskwargs
         }
 
-        super(SelectingNestedCrossValidator, self).__init__(SelectingGridSearcher, folds, ncv, mode)
+        super(SelectingNestedCrossValidator, self).__init__(SelectingGridSearcher, folds, ncvkwargs)

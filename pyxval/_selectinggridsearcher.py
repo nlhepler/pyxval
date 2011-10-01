@@ -32,18 +32,18 @@ __all__ = ['SelectingGridSearcher']
 # implement cross-validation interface here, grid-search optional
 class SelectingGridSearcher(GridSearcher):
 
-    ACCURACY            = PerfStats.ACCURACY
-    PPV, PRECISION      = PerfStats.PPV, PerfStats.PRECISION
-    NPV                 = PerfStats.NPV
-    SENSITIVITY, RECALL = PerfStats.SENSITIVITY, PerfStats.RECALL
-    SPECIFICITY, TNR    = PerfStats.SPECIFICITY, PerfStats.TNR
-    FSCORE              = PerfStats.FSCORE
-    MINSTAT             = PerfStats.MINSTAT
-
-    def __init__(self, classifiercls, selectorcls, folds, cv={}, mode=None, optstat=PerfStats.MINSTAT, gs={}, fs={}):
-        super(SelectingGridSearcher, self).__init__(classifiercls, folds, cv, mode, optstat, gs)
+    def __init__(self,
+            classifiercls,
+            selectorcls,
+            folds,
+            ckwargs={},
+            fskwargs={},
+            scorercls=PerfStats,
+            skwargs={ 'optstat': PerfStats.MINSTAT },
+            gskwargs={}):
+        super(SelectingGridSearcher, self).__init__(classifiercls, folds, ckwargs, scorercls, skwargs, gskwargs)
         self.__selected = False
-        self.selector = selectorcls(**fs)
+        self.selector = selectorcls(**fskwargs)
 
     def select(self, x, y):
         self.selector.select(x, y)
@@ -59,10 +59,10 @@ class SelectingGridSearcher(GridSearcher):
             raise StandardError('Selection hasn\'t yet been performed.')
         return self.selector.features()
 
-    def gridsearch(self, x, y, cv={}, extra=None):
+    def gridsearch(self, x, y, ckwargs={}, extra=None):
         SelectingGridSearcher.select(self, x, y)
         x = self.selector.subset(x)
-        return super(SelectingGridSearcher, self).gridsearch(x, y, cv=cv, extra=extra)
+        return super(SelectingGridSearcher, self).gridsearch(x, y, ckwargs=ckwargs, extra=extra)
 
     def learn(self, x, y):
         SelectingGridSearcher.select(self, x, y)

@@ -32,61 +32,61 @@ __all__ = ['GridSearcher']
 # implement cross-validation interface here, grid-search optional
 class GridSearcher(CrossValidator):
 
-    ACCURACY            = PerfStats.ACCURACY
-    PPV, PRECISION      = PerfStats.PPV, PerfStats.PRECISION
-    NPV                 = PerfStats.NPV
-    SENSITIVITY, RECALL = PerfStats.SENSITIVITY, PerfStats.RECALL
-    SPECIFICITY, TNR    = PerfStats.SPECIFICITY, PerfStats.TNR
-    FSCORE              = PerfStats.FSCORE
-    MINSTAT             = PerfStats.MINSTAT
-
-    def __init__(self, classifiercls, folds, cv={}, mode=None, optstat=PerfStats.MINSTAT, gs={}):
-        super(GridSearcher, self).__init__(classifiercls, folds, cv, mode)
-        self.gs = gs
-        self.optstat = optstat
+    def __init__(self,
+            classifiercls,
+            folds,
+            ckwargs={},
+            scorercls=PerfStats,
+            skwargs={'optstat': PerfStats.MINSTAT},
+            gskwargs={}):
+        super(GridSearcher, self).__init__(classifiercls, folds, ckwargs)
+        # self.ckwargs, and self.classifiercls are in CrossValidator
+        self.scorercls = scorercls
+        self.skwargs = skwargs
+        self.gskwargs = gskwargs
         self.classifier = None
         self.__computed = False
 
-    def gridsearch(self, x, y, cv={}, extra=None):
+    def gridsearch(self, x, y, ckwargs={}, extra=None):
         if extra is not None:
             if not isinstance(extra, str) and not isinstance(extra, FunctionType):
                 raise ValueError('the `extra\' argument takes either a string or a function.')
 
-        ret = { 'stats': PerfStats() }
+        ret = { 'stats': self.scorercls(**self.skwargs) }
 
-        if len(self.gs) == 1:
-            k0, params = self.gs.items()[0]
+        if len(self.gskwargs) == 1:
+            k0, params = self.gskwargs.items()[0]
             bestparams = {}
             for p0 in params:
-                cv[k0] = p0
-                r = GridSearcher.crossvalidate(self, x, y, cv=cv)
-                if r['stats'].get(self.optstat) > ret['stats'].get(self.optstat):
+                ckwargs[k0] = p0
+                r = GridSearcher.crossvalidate(self, x, y, ckwargs=ckwargs)
+                if r['stats'] > ret['stats']:
                     ret = r
-                    bestparams = deepcopy(cv)
-            kwargs = deepcopy(self.cv)
+                    bestparams = deepcopy(ckwargs)
+            kwargs = deepcopy(self.ckwargs)
             for k, v in bestparams.items():
                 kwargs[k] = v
             ret['kwargs'] = kwargs
-        elif len(self.gs) == 2:
-            gsp = self.gs.items()
+        elif len(self.gskwargs) == 2:
+            gsp = self.gskwargs.items()
             k0, params0 = gsp[0]
             k1, params1 = gsp[1]
             bestparams = {}
             for p0 in params0:
                 for p1 in params1:
-                    cv[k0] = p0, cv[k1] = p1
-                    r = GridSearcher.crossvalidate(self, x, y, cv=cv)
-                    if r['stats'].get(self.optstat) > ret['stats'].get(self.optstat):
+                    ckwargs[k0] = p0, ckwargs[k1] = p1
+                    r = GridSearcher.crossvalidate(self, x, y, ckwargs=ckwargs)
+                    if r['stats'] > ret['stats']:
                         ret = r
-                        bestparams = deepcopy(cv)
-            kwargs = deepcopy(self.cv)
+                        bestparams = deepcopy(ckwargs)
+            kwargs = deepcopy(self.ckwargs)
             for k, v in bestparams.items():
                 kwargs[k] = v
             ret['kwargs'] = kwargs
         else:
             raise ValueError('We only support up to a 2D grid search at this time')
 
-        ret['extra'] = GridSearcher.crossvalidate(self, x, y, cv=ret['kwargs'], extra=extra)['extra'] if extra is not None else None
+        ret['extra'] = GridSearcher.crossvalidate(self, x, y, ckwargs=ret['kwargs'], extra=extra)['extra'] if extra is not None else None
 
 #         print ret['kwargs']
 #         print '\n'.join([str(s) for s in ret['stats'].tolist()])

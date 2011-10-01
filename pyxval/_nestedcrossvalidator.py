@@ -31,23 +31,21 @@ __all__ = ['NestedCrossValidator']
 
 class NestedCrossValidator(CrossValidator):
 
-    ACCURACY            = PerfStats.ACCURACY
-    PPV, PRECISION      = PerfStats.PPV, PerfStats.PRECISION
-    NPV                 = PerfStats.NPV
-    SENSITIVITY, RECALL = PerfStats.SENSITIVITY, PerfStats.RECALL
-    SPECIFICITY, TNR    = PerfStats.SPECIFICITY, PerfStats.TNR
-    FSCORE              = PerfStats.FSCORE
-    MINSTAT             = PerfStats.MINSTAT
+    def __init__(self,
+            classifiercls,
+            folds,
+            ckwargs={},
+            scorercls=PerfStats,
+            skwargs={ 'optstat': PerfStats.MINSTAT },
+            gskwargs={}):
 
-    def __init__(self, classifiercls, folds, cv={}, mode=None, optstat=PerfStats.MINSTAT, gs={}):
-
-        ncv = {
+        ncvkwargs = {
             'classifiercls': classifiercls,
             'folds': folds - 1,
-            'optstat': optstat,
-            'cv': cv,
-            'mode': mode,
-            'gs': gs,
+            'ckwargs': ckwargs,
+            'scorercls': scorercls,
+            'skwargs': skwargs,
+            'gskwargs': gskwargs
         }
 
-        super(NestedCrossValidator, self).__init__(GridSearcher, folds, ncv, mode)
+        super(NestedCrossValidator, self).__init__(GridSearcher, folds, ncvkwargs)

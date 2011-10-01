@@ -33,38 +33,62 @@ __all__ = ['CrossValidator']
 
 # implement cross-validation interface here, grid-search optional
 class CrossValidator(object):
-    CONTINUOUS = PerfStats.CONTINUOUS
-    DISCRETE   = PerfStats.DISCRETE
 
-    def __init__(self, classifiercls, folds, cv={}, mode=None):
-        if mode is None:
-            mode = CrossValidator.DISCRETE
+    def __init__(self,
+            classifiercls,
+            folds,
+            ckwargs={},
+            scorercls=PerfStats,
+            skwargs={ 'mode': PerfStats.DISCRETE },
+            learnfunc=None,
+            predictfunc=None,
+            weightfunc=None):
         self.classifiercls = classifiercls
         self.folds = folds
-        self.cv = cv
-        self.mode = mode
+        self.ckwargs = ckwargs
+        self.scorercls = scorercls
+        self.skwargs = {}
+        self.__learnfunc, self.__predictfunc, self.__weightfunc = \
+                CrossValidator.__findfuncs(classifiercls, learnfunc, predictfunc, weightfunc)
+
+    @staticmethod
+    def __findfuncs(classifiercls, learnfunc, predictfunc, weightfunc):
         classifiercls_dir = dir(classifiercls)
-        self.__learnfunc = None
-        for m in ('learn', 'compute'):
+
+        # set up some default places to look for functions
+        if learnfunc is None:
+            learnfunc = ('learn', 'compute')
+        else:
+            learnfunc = (learnfunc,)
+        if predictfunc is None:
+            predictfunc = ('predict', 'pred')
+        else:
+            predictfunc = (predictfunc,)
+        if weightfunc is None:
+            weightfunc = ('weights',)
+        else:
+            weightfunc = (weightfunc,)
+
+        # look for these functions
+        for m in learnfunc:
             if m in classifiercls_dir:
-                self.__learnfunc = m
+                learnfunc = m
                 break
-        if self.__learnfunc is None:
+        if learnfunc is None:
             raise ValueError('No known learning mechanism in base class `%s\'' % repr(classifiercls))
-        self.__predictfunc = None
-        for m in ('predict', 'pred'):
+        for m in predictfunc:
             if m in classifiercls_dir:
-                self.__predictfunc = m
+                predictfunc = m
                 break
-        if self.__predictfunc is None:
+        if predictfunc is None:
             raise ValueError('No known prediction mechanism in base class `%s\'' % repr(classifiercls))
-        self.__weightfunc = None
-        for m in ('weights',):
+        # we don't care if the weightfunc isn't found
+        for m in weightfunc:
             if m in classifiercls_dir:
-                self.__weightfunc = m
+                weightfunc = m
                 break
-        if self.__weightfunc is None and self.mode == CrossValidator.CONTINUOUS:
-            raise ValueError('No known weight-retrieval mechanism in base class `%s\'' % repr(classifiercls))
+
+        return learnfunc, predictfunc, weightfunc
 
     @staticmethod
     def __partition(l, folds):
@@ -75,19 +99,19 @@ class CrossValidator(object):
         assert(len(p) == l)
         return p
 
-    def crossvalidate(self, x, y, cv={}, extra=None):
+    def crossvalidate(self, x, y, ckwargs={}, extra=None):
         if extra is not None:
             if not isinstance(extra, str) and not isinstance(extra, FunctionType):
                 raise ValueError('the `extra\' argument takes either a string or a function.')
 
-        kwargs = deepcopy(self.cv)
-        kwargs.update(cv)
+        kwargs = deepcopy(self.ckwargs)
+        kwargs.update(ckwargs)
 
         nrow, _ = x.shape
 
         p = CrossValidator.__partition(nrow, self.folds)
 
-        stats = PerfStats(self.mode)
+        stats = self.scorercls(**self.skwargs)
         lret = []
         xtra = []
 
@@ -119,7 +143,7 @@ class CrossValidator(object):
                     xtra.append(apply(extra, (classifier,)))
 
             weights = None
-            if self.mode == CrossValidator.CONTINUOUS:
+            if self.__weightfunc is not None:
                 try:
                     weights = apply(getattr(classifier, self.__weightfunc),)
                 except AttributeError:
