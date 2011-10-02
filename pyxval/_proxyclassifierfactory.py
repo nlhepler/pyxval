@@ -8,17 +8,23 @@ def is_proxy(classifier_cls):
     return len(classifier_cls.__name__) > len(_proxy_hdr) \
             and classifier_cls.__name__[:len(_proxy_hdr)] == _proxy_hdr
 
+
 class _dynamic_proxy_class(type):
     def __reduce__(self):
         return _create_proxy, self._reduce_args
 
+
 def _create_proxy(classifier_cls, learn_func, predict_func, weights_func):
-    proxy_class = _dynamic_proxy_class(_proxy_hdr + classifier_cls.__name__, (classifier_cls,), {})
+    proxy_class = _dynamic_proxy_class(
+            _proxy_hdr + classifier_cls.__name__,
+            (classifier_cls,),
+            { '_reduce_args': (classifier_cls, learn_func, predict_func, weights_func) }
+    )
 
     proxy_methods = [
             ('learn', learn_func),
             ('predict', predict_func),
-            ('weights', weights_func),
+            ('weights', weights_func)
     ]
     for proxy_func, real_func in proxy_methods:
         if proxy_func == real_func:
@@ -34,13 +40,7 @@ def _create_proxy(classifier_cls, learn_func, predict_func, weights_func):
         elif not hasattr(method, 'im_self'):
             method = staticmethod(method)
 
-        setattr(
-                proxy_class,
-                proxy_func,
-                method
-        )
-
-    proxy_class._reduce_args = classifier_cls, learn_func, predict_func, weights_func
+        setattr(proxy_class, proxy_func, method)
 
     return proxy_class
 
