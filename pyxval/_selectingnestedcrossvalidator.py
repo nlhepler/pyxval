@@ -42,7 +42,7 @@ class SelectingNestedCrossValidator(CrossValidator):
             scorer_kwargs={},
             learn_func=None,
             predict_func=None,
-            weight_func=None):
+            weights_func=None):
 
         ncvkwargs = {
             'classifier_cls': classifier_cls,
@@ -55,7 +55,7 @@ class SelectingNestedCrossValidator(CrossValidator):
             'scorer_kwargs': scorer_kwargs,
             'learn_func': learn_func,
             'predict_func': predict_func,
-            'weight_func': weight_func
+            'weights_func': weights_func
         }
 
-        super(SelectingNestedCrossValidator, self).__init__(SelectingGridSearcher, folds, ncvkwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weight_func)
+        super(SelectingNestedCrossValidator, self).__init__(SelectingGridSearcher, folds, ncvkwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weights_func)

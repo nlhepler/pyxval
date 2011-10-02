@@ -43,8 +43,8 @@ class SelectingGridSearcher(GridSearcher):
             scorer_kwargs={},
             learn_func=None,
             predict_func=None,
-            weight_func=None):
-        super(SelectingGridSearcher, self).__init__(classifier_cls, folds, gridsearch_kwargs, classifier_kwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weight_func)
+            weights_func=None):
+        super(SelectingGridSearcher, self).__init__(classifier_cls, folds, gridsearch_kwargs, classifier_kwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weights_func)
         self.__selected = False
         self.selector = selector_cls(**fscorer_kwargs)
 

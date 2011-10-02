@@ -13,6 +13,7 @@ import unittest
 
 import numpy as np
 
+from pyxval import CrossValidator
 from pyxval import GridSearcher
 
 from _optimist import Optimist
@@ -29,7 +30,13 @@ class TestGridSearcher(unittest.TestCase):
         random.shuffle(self.y)
 
     def test_using_numpy_ndarray_and_lists(self):
-        xgser = GridSearcher(Optimist, 10, gridsearch_kwargs={ 'c': xrange(5) }, learn_func=Optimist.train)
+        xgser = GridSearcher(
+            Optimist,
+            CrossValidator,
+            { 'folds': 10 },
+            gridsearch_kwargs={ 'c': xrange(5) },
+            learn_func=Optimist.train
+        )
         xlist = [list(row) for row in list(self.x)]
 
         #test using ndarray types for x and y
