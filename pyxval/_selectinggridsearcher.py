@@ -35,18 +35,31 @@ class SelectingGridSearcher(GridSearcher):
     def __init__(self,
             classifier_cls,
             selector_cls,
-            folds,
+            validator_cls,
             gridsearch_kwargs,
             classifier_kwargs={},
-            fscorer_kwargs={},
+            selector_kwargs={},
+            validator_kwargs={},
             scorer_cls=DiscretePerfStats,
             scorer_kwargs={},
             learn_func=None,
             predict_func=None,
             weights_func=None):
-        super(SelectingGridSearcher, self).__init__(classifier_cls, folds, gridsearch_kwargs, classifier_kwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weights_func)
+
+        super(SelectingGridSearcher, self).__init__(
+                classifier_cls,
+                validator_cls,
+                validator_kwargs,
+                gridsearch_kwargs,
+                classifier_kwargs,
+                scorer_cls,
+                scorer_kwargs,
+                learn_func,
+                predict_func,
+                weights_func
+        )
         self.__selected = False
-        self.selector = selector_cls(**fscorer_kwargs)
+        self.selector = selector_cls(**selector_kwargs)
 
     def select(self, x, y):
         self.selector.select(x, y)

@@ -51,7 +51,12 @@ class CrossValidator(Validator):
             weights_func=None):
 
         if classifier_cls.__name__ != 'ProxyClassifier':
-            classifier_cls = ProxyClassifierFactory(classifier_cls, learn_func, predict_func, weights_func).generate()
+            classifier_cls = ProxyClassifierFactory(
+                    classifier_cls,
+                    learn_func,
+                    predict_func,
+                    weights_func
+            ).generate()
 
         self.classifier_cls = classifier_cls
         self.folds = folds

@@ -36,17 +36,20 @@ class NestedCrossValidator(CrossValidator):
             folds,
             gridsearch_kwargs,
             classifier_kwargs={},
+            validator_cls=None,
+            validator_kwargs={},
             scorer_cls=DiscretePerfStats,
             scorer_kwargs={},
             learn_func=None,
             predict_func=None,
             weights_func=None):
 
-        ncvkwargs = {
+        gridsearcher_kwargs = {
             'classifier_cls': classifier_cls,
-            'folds': folds - 1,
+            'validator_cls': CrossValidator if validator_cls is None else validator_cls,
             'gridsearch_kwargs': gridsearch_kwargs,
             'classifier_kwargs': classifier_kwargs,
+            'validator_kwargs': { 'folds': folds-1 } if (validator_cls is None and len(validator_kwargs) == 0) else validator_kwargs,
             'scorer_cls': scorer_cls,
             'scorer_kwargs': scorer_kwargs,
             'learn_func': learn_func,
@@ -54,4 +57,13 @@ class NestedCrossValidator(CrossValidator):
             'weights_func': weights_func
         }
 
-        super(NestedCrossValidator, self).__init__(GridSearcher, folds, ncvkwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weights_func)
+        super(NestedCrossValidator, self).__init__(
+                GridSearcher,
+                folds,
+                gridsearcher_kwargs,
+                scorer_cls,
+                scorer_kwargs,
+                learn_func,
+                predict_func,
+                weights_func
+        )
