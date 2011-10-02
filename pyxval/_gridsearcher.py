@@ -22,32 +22,38 @@
 from copy import deepcopy
 from types import FunctionType
 
-from _discreteperfstats import DiscretePerfStats
 from _crossvalidator import CrossValidator
+from _discreteperfstats import DiscretePerfStats
+from _proxyclassifierfactory import ProxyClassifierFactory
 
 
 __all__ = ['GridSearcher']
 
 
 # implement cross-validation interface here, grid-search optional
-class GridSearcher(CrossValidator):
+class GridSearcher(object):
 
     def __init__(self,
             classifier_cls,
-            folds,
+            validator_cls,
+            validator_kwargs,
             gridsearch_kwargs,
             classifier_kwargs={},
             scorer_cls=DiscretePerfStats,
             scorer_kwargs={},
             learn_func=None,
             predict_func=None,
-            weight_func=None):
+            weights_func=None):
 
-        super(GridSearcher, self).__init__(classifier_cls, folds, classifier_kwargs, scorer_cls, scorer_kwargs, learn_func, predict_func, weight_func)
-        # self.classifier_kwargs, and self.classifier_cls are in CrossValidator
+        if classifier_cls.__name__ != 'ProxyClassifier':
+            classifier_cls = ProxyClassifierFactory(classifier_cls, learn_func, predict_func, weights_func).generate()
+
+        self.validator = validator_cls(**validator_kwargs)
+        self.gridsearch_kwargs = gridsearch_kwargs
+        self.classifier_cls = classifier_cls
+        self.classifier_kwargs = classifier_kwargs
         self.scorer_cls = scorer_cls
         self.scorer_kwargs = scorer_kwargs
-        self.gridsearch_kwargs = gridsearch_kwargs
         self.classifier = None
         self.__computed = False
 
@@ -63,7 +69,7 @@ class GridSearcher(CrossValidator):
             bestparams = {}
             for p0 in params:
                 classifier_kwargs[k0] = p0
-                r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=classifier_kwargs)
+                r = self.validator.validate(self, x, y, classifier_kwargs=classifier_kwargs)
                 if r.stats > ret['stats']:
                     ret = r
                     bestparams = deepcopy(classifier_kwargs)
@@ -79,7 +85,7 @@ class GridSearcher(CrossValidator):
             for p0 in params0:
                 for p1 in params1:
                     classifier_kwargs[k0] = p0, classifier_kwargs[k1] = p1
-                    r = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=classifier_kwargs)
+                    r = self.validator.validate(self, x, y, classifier_kwargs=classifier_kwargs)
                     if r.stats > ret['stats']:
                         ret = r
                         bestparams = deepcopy(classifier_kwargs)
@@ -90,7 +96,7 @@ class GridSearcher(CrossValidator):
         else:
             raise ValueError('We only support up to a 2D grid search at this time')
 
-        ret['extra'] = GridSearcher.crossvalidate(self, x, y, classifier_kwargs=ret['kwargs'], extra=extra)['extra'] if extra is not None else None
+        ret['extra'] = self.validator.validate(self, x, y, classifier_kwargs=ret['kwargs'], extra=extra)['extra'] if extra is not None else None
 
 #         print ret['kwargs']
 #         print '\n'.join([str(s) for s in ret['stats'].tolist()])
@@ -105,7 +111,7 @@ class GridSearcher(CrossValidator):
 
         self.classifier = self.classifier_cls(**gsret['kwargs'])
         # I don't like unmangling the private name, but here it is..
-        lret = getattr(self.classifier, self._CrossValidator__learn_func)(x, y)
+        lret = self.classifier.learn(x, y)
 
         self.__computed = True
 
@@ -115,4 +121,10 @@ class GridSearcher(CrossValidator):
         if self.__computed == False:
             raise RuntimeError('No model computed')
 
-        return getattr(self.classifier, self._CrossValidator__predict_func)(x)
+        return self.classifier.predict(x)
+
+    def weights(self):
+        if self.__computed == False:
+            raise RuntimeError('No model computed')
+
+        return self.classifier.weights()

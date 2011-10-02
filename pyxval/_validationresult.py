@@ -1,7 +1,7 @@
 
 
 
-class CrossValidatorResult(object):
+class ValidationResult(object):
 
     def __init__(self, learn, stats, extra):
         self.learn = learn

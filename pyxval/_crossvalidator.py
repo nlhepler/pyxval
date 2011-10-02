@@ -28,15 +28,17 @@ from random import shuffle
 
 import numpy as np
 
-from _crossvalidatorresult import CrossValidatorResult
 from _discreteperfstats import DiscretePerfStats
+from _proxyclassifierfactory import ProxyClassifierFactory
+from _validator import Validator
+from _validationresult import ValidationResult
 
 
 __all__ = ['CrossValidator']
 
 
 # implement cross-validation interface here, grid-search optional
-class CrossValidator(object):
+class CrossValidator(Validator):
 
     def __init__(self,
             classifier_cls,
@@ -48,72 +50,14 @@ class CrossValidator(object):
             predict_func=None,
             weight_func=None):
 
+        if classifier_cls.__name__ != 'ProxyClassifier':
+            classifier_cls = ProxyClassifierFactory(classifier_cls, learn_func, predict_func, weight_func).generate()
+
         self.classifier_cls = classifier_cls
         self.folds = folds
         self.classifier_kwargs = classifier_kwargs
         self.scorer_cls = scorer_cls
         self.scorer_kwargs = {}
-        self.__learn_func, self.__predict_func, self.__weight_func = \
-                CrossValidator.__find_funcs(classifier_cls, learn_func, predict_func, weight_func)
-
-    @staticmethod
-    def __find_funcs(classifier_cls, learn_func, predict_func, weight_func):
-        classifier_cls_dir = dir(classifier_cls)
-
-        # set up some default places to look for _functions
-        if learn_func is None:
-            learn_func = ('learn', 'compute')
-        elif isinstance(learn_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
-            learn_func = (learn_func.__name__,)
-        elif isinstance(learn_func, types.StringTypes):
-            learn_func = (learn_func,)
-        else:
-            raise ValueError('learn_func has an unhandled type %s' % type(learn_func))
-
-        if predict_func is None:
-            predict_func = ('predict', 'pred')
-        elif isinstance(predict_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
-            predict_func = (predict_func.__name__,)
-        elif isinstance(predict_func, types.StringTypes):
-            predict_func = (predict_func,)
-        else:
-            raise ValueError('predict_func has an unhandled type %s' % type(predict_func))
-
-        if weight_func is None:
-            weight_func = None # ('weights',) # if weights is None, don't bother looking
-        elif isinstance(weight_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
-            weight_func = (weight_func.__name__,)
-        elif isinstance(weight_func, types.StringTypes):
-            weight_func = (weight_func,)
-        else:
-            raise ValueError('weight_func has an unhandled type %s' % type(weight_func))
-
-        # look for these _functions
-        lf = None
-        for m in learn_func:
-            if m in classifier_cls_dir:
-                lf = m
-                break
-        if lf is None:
-            raise ValueError('No known learning mechanism in base class `%s\'' % repr(classifier_cls))
-
-        pf = None
-        for m in predict_func:
-            if m in classifier_cls_dir:
-                pf = m
-                break
-        if pf is None:
-            raise ValueError('No known prediction mechanism in base class `%s\'' % repr(classifier_cls))
-
-        # we don't care if the weight_func isn't found
-        wf = None
-        if weight_func is not None:
-            for m in weight_func:
-                if m in classifier_cls_dir:
-                    wf = m
-                    break
-
-        return lf, pf, wf
 
     @staticmethod
     def __partition(l, folds):
@@ -124,7 +68,7 @@ class CrossValidator(object):
         assert(len(p) == l)
         return p
 
-    def crossvalidate(self, x, y, classifier_kwargs={}, extra=None):
+    def validate(self, x, y, classifier_kwargs={}, extra=None):
         '''
         Runs crossvalidation on the provided data.  The length of the :py:obj:`x` array should be identical to :py:obj:`y`
         and will be used to partition the lists by index.
@@ -171,11 +115,11 @@ class CrossValidator(object):
 
             classifier = self.classifier_cls(**kwargs)
 
-            l = apply(getattr(classifier, self.__learn_func), (xin, yin))
+            l = classifier.learn(xin, yin)
             if l is not None:
                 lret.append(l)
 
-            preds = apply(getattr(classifier, self.__predict_func), (xout,))
+            preds = classifier.predict(xout)
 
             # do this after both learning and prediction just in case either performs some necessary computation
             if extra is not None:
@@ -184,16 +128,9 @@ class CrossValidator(object):
                 elif isinstance(extra, types.MethodType):
                     xtra.append(apply(extra, (classifier,)))
 
-            weights = None
-            if self.__weight_func is not None:
-                try:
-                    weights = apply(getattr(classifier, self.__weight_func),)
-                except AttributeError:
-                    raise RuntimeError('Cannot retrieve weights from underlying classifier')
+            stats.append(yout, preds, classifier.weights())
 
-            stats.append(yout, preds, weights)
-
-        return CrossValidatorResult(
+        return ValidationResult(
             lret if len(lret) else None,
             stats,
             xtra if len(xtra) else None
