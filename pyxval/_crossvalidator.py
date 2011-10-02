@@ -29,7 +29,7 @@ from random import shuffle
 import numpy as np
 
 from _crossvalidatorresult import CrossValidatorResult
-from _perfstats import PerfStats
+from _discreteperfstats import DiscretePerfStats
 
 
 __all__ = ['CrossValidator']
@@ -42,8 +42,8 @@ class CrossValidator(object):
             classifier_cls,
             folds,
             classifier_kwargs={},
-            scorer_cls=PerfStats,
-            scorer_kwargs={ 'mode': PerfStats.DISCRETE },
+            scorer_cls=DiscretePerfStats,
+            scorer_kwargs={},
             learn_func=None,
             predict_func=None,
             weight_func=None):

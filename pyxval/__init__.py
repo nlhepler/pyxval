@@ -10,11 +10,12 @@ from _selectinggridsearcher import *
 from _selectingnestedcrossvalidator import *
 
 __all__ = []
+__all__ += _continuousperfstats.__all__
 __all__ += _crossvalidator.__all__
+__all__ += _discreteperfstats.__all__
 __all__ += _gridsearcher.__all__
 __all__ += _nestedcrossvalidator.__all__
 __all__ += _normalvalue.__all__
-__all__ += _perfstats.__all__
 __all__ += _selectinggridsearcher.__all__
 __all__ += _selectingnestedcrossvalidator.__all__
 

@@ -14,7 +14,6 @@ import unittest
 import numpy as np
 
 from pyxval import GridSearcher
-from pyxval import PerfStats
 
 from _optimist import Optimist
 

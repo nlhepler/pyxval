@@ -22,7 +22,7 @@
 from sys import stderr
 from copy import deepcopy
 
-from _perfstats import PerfStats
+from _discreteperfstats import DiscretePerfStats
 from _gridsearcher import GridSearcher
 
 
@@ -39,8 +39,8 @@ class SelectingGridSearcher(GridSearcher):
             gridsearch_kwargs,
             classifier_kwargs={},
             fscorer_kwargs={},
-            scorer_cls=PerfStats,
-            scorer_kwargs={ 'optstat': PerfStats.MINSTAT },
+            scorer_cls=DiscretePerfStats,
+            scorer_kwargs={},
             learn_func=None,
             predict_func=None,
             weight_func=None):

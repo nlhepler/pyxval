@@ -23,7 +23,7 @@ from copy import deepcopy
 
 from _crossvalidator import CrossValidator
 from _gridsearcher import GridSearcher
-from _perfstats import PerfStats
+from _discreteperfstats import DiscretePerfStats
 
 
 __all__ = ['NestedCrossValidator']
@@ -36,8 +36,8 @@ class NestedCrossValidator(CrossValidator):
             folds,
             gridsearch_kwargs,
             classifier_kwargs={},
-            scorer_cls=PerfStats,
-            scorer_kwargs={ 'optstat': PerfStats.MINSTAT },
+            scorer_cls=DiscretePerfStats,
+            scorer_kwargs={},
             learn_func=None,
             predict_func=None,
             weight_func=None):
