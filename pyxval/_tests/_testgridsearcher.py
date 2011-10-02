@@ -30,7 +30,7 @@ class TestGridSearcher(unittest.TestCase):
         self.y.extend([1]*6)
         random.shuffle(self.y)
 
-    def test_using_numpy_ndarray_and_lists(self):
+    def test_gridsearcher_ndarrays_and_lists(self):
         xgser = GridSearcher(
             Optimist,
             CrossValidator,

@@ -30,7 +30,7 @@ class TestPickling(unittest.TestCase):
         pass
 
     def test_pickle_gridsearcher(self):
-        with self.assertRaises(pickle.PicklingError):
+        with self.assertRaises(pickle.PicklingError) as cm:
             xgser = GridSearcher(
                     Optimist,
                     CrossValidator,
@@ -41,7 +41,7 @@ class TestPickling(unittest.TestCase):
             pickle.dumps(xgser)
 
     def test_pickle_crossvalidator(self):
-        with self.assertRaises(pickle.PicklingError):
+        with self.assertRaises(pickle.PicklingError) as cm:
             xvalor = CrossValidator(
                     Optimist,
                     folds=10,

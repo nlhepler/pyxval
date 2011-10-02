@@ -30,7 +30,7 @@ class TestCrossValidator(unittest.TestCase):
         self.y.extend([1]*5)
         random.shuffle(self.y)
 
-    def test_using_numpy_ndarray_and_lists(self):
+    def test_crossvalidator_ndarrays_and_lists(self):
         xvalor = CrossValidator(Optimist, 10, learn_func=Optimist.train)
         xlist = [list(row) for row in list(self.x)]
 
