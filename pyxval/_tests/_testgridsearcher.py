@@ -33,8 +33,8 @@ class TestGridSearcher(unittest.TestCase):
         xgser = GridSearcher(
             Optimist,
             CrossValidator,
-            { 'folds': 10 },
             gridsearch_kwargs={ 'c': xrange(5) },
+            validator_kwargs={ 'folds': 10 },
             learn_func=Optimist.train
         )
         xlist = [list(row) for row in list(self.x)]
