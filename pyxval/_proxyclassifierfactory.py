@@ -2,33 +2,59 @@
 import copy_reg, types
 
 
-class ProxyClassifierFactory(object):
+_proxy_hdr = 'Proxy'
 
-    @staticmethod
-    def _create_proxy(classifier_cls, learn_func, predict_func, weights_func):
+def is_proxy(classifier_cls):
+    return len(classifier_cls.__name__) > len(_proxy_hdr) \
+            and classifier_cls.__name__[:len(_proxy_hdr)] == _proxy_hdr
 
-        class ProxyClassifier(classifier_cls):
-            def __init__(self, *args, **kwargs):
-                super(ProxyClassifier, self).__init__(*args, **kwargs)
-                self.learn = getattr(self, learn_func)
-                self.predict = getattr(self, predict_func)
-                self.weights = lambda: None if weights_func is None else getattr(self, weights_func)
-            def __reduce__(self):
-                return ProxyClassifierFactory._create_proxy, (classifier_cls, learn_func, predict_func, weights_func)
+class _dynamic_proxy_class(type):
+    def __reduce__(self):
+        return _create_proxy, self._reduce_args
 
-        copy_reg.pickle(
-                ProxyClassifier,
-                ProxyClassifier.__reduce__,
-                ProxyClassifierFactory._create_proxy
+def _create_proxy(classifier_cls, learn_func, predict_func, weights_func):
+    proxy_class = _dynamic_proxy_class(_proxy_hdr + classifier_cls.__name__, (classifier_cls,), {})
+
+    proxy_methods = [
+            ('learn', learn_func),
+            ('predict', predict_func),
+            ('weights', weights_func),
+    ]
+    for proxy_func, real_func in proxy_methods:
+        if proxy_func == real_func:
+            continue
+
+        if real_func is None:
+            method = lambda: None
+        else:
+            method = getattr(classifier_cls, real_func)
+
+        if hasattr(method, 'im_self') and getattr(method, 'im_self'):
+            types.MethodType(method, proxy_class)
+        elif not hasattr(method, 'im_self'):
+            method = staticmethod(method)
+
+        setattr(
+                proxy_class,
+                proxy_func,
+                method
         )
 
-        return ProxyClassifier
+    proxy_class._reduce_args = classifier_cls, learn_func, predict_func, weights_func
+
+    return proxy_class
+
+copy_reg.constructor(_create_proxy)
+copy_reg.pickle(_dynamic_proxy_class, _dynamic_proxy_class.__reduce__, _create_proxy)
+
+
+class ProxyClassifierFactory(object):
 
     def __init__(self, classifier_cls, learn_func=None, predict_func=None, weights_func=None):
         learn_func, predict_func, weights_func = \
                 ProxyClassifierFactory.__find_funcs(classifier_cls, learn_func, predict_func, weights_func)
 
-        self.__proxyclass = ProxyClassifierFactory._create_proxy(
+        self.__proxyclass = _create_proxy(
                 classifier_cls,
                 learn_func,
                 predict_func,
@@ -96,6 +122,3 @@ class ProxyClassifierFactory(object):
                     break
 
         return lf, pf, wf
-
-
-copy_reg.constructor(ProxyClassifierFactory._create_proxy)

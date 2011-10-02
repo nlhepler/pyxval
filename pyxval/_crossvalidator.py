@@ -29,7 +29,7 @@ from random import shuffle
 import numpy as np
 
 from _discreteperfstats import DiscretePerfStats
-from _proxyclassifierfactory import ProxyClassifierFactory
+from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
 from _validator import Validator
 from _validationresult import ValidationResult
 
@@ -50,7 +50,7 @@ class CrossValidator(Validator):
             predict_func=None,
             weights_func=None):
 
-        if classifier_cls.__name__ != 'ProxyClassifier':
+        if not is_proxy(classifier_cls):
             classifier_cls = ProxyClassifierFactory(
                     classifier_cls,
                     learn_func,
