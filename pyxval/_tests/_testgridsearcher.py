@@ -6,7 +6,7 @@ Created on 10/1/11
 @author: brent payne
 '''
 
-__author__ = 'brent payne'
+__author__ = 'Lance Hepler'
 
 import random
 import unittest
@@ -23,6 +23,7 @@ __all__ = ['TestGridSearcher']
 
 
 class TestGridSearcher(unittest.TestCase):
+
     def setUp(self):
         self.x = np.random.rand(10,3)
         self.y = [0]*5

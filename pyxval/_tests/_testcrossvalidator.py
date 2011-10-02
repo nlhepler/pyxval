@@ -18,7 +18,9 @@ from pyxval import DiscretePerfStats
 
 from _optimist import Optimist
 
+
 __all__ = ['TestCrossValidator']
+
 
 class TestCrossValidator(unittest.TestCase):
 

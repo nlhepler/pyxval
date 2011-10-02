@@ -1,21 +1,39 @@
 
-import types
+import copy_reg, types
 
 
 class ProxyClassifierFactory(object):
+
+    @staticmethod
+    def _create_proxy(classifier_cls, learn_func, predict_func, weights_func):
+
+        class ProxyClassifier(classifier_cls):
+            def __init__(self, *args, **kwargs):
+                super(ProxyClassifier, self).__init__(*args, **kwargs)
+                self.learn = getattr(self, learn_func)
+                self.predict = getattr(self, predict_func)
+                self.weights = lambda: None if weights_func is None else getattr(self, weights_func)
+            def __reduce__(self):
+                return ProxyClassifierFactory._create_proxy, (classifier_cls, learn_func, predict_func, weights_func)
+
+        copy_reg.pickle(
+                ProxyClassifier,
+                ProxyClassifier.__reduce__,
+                ProxyClassifierFactory._create_proxy
+        )
+
+        return ProxyClassifier
 
     def __init__(self, classifier_cls, learn_func=None, predict_func=None, weights_func=None):
         learn_func, predict_func, weights_func = \
                 ProxyClassifierFactory.__find_funcs(classifier_cls, learn_func, predict_func, weights_func)
 
-        class ProxyClassifier(classifier_cls):
-            def __init__(self, *args, **kwargs):
-                super(ProxyClassifier, self).__init__(*args, **kwargs)
-                self.predict = getattr(self, predict_func)
-                self.learn = getattr(self, learn_func)
-                self.weights = lambda: None if weights_func is None else getattr(self, weights_func)
-
-        self.__proxyclass = ProxyClassifier
+        self.__proxyclass = ProxyClassifierFactory._create_proxy(
+                classifier_cls,
+                learn_func,
+                predict_func,
+                weights_func
+        )
 
     def generate(self):
         return self.__proxyclass
@@ -78,3 +96,6 @@ class ProxyClassifierFactory(object):
                     break
 
         return lf, pf, wf
+
+
+copy_reg.constructor(ProxyClassifierFactory._create_proxy)
