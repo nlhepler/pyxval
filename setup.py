@@ -9,5 +9,5 @@ setup(name='pyxval',
       author_email='nlhepler@gmail.com',
       url='http://github.com/nlhepler/pyxval',
       license='GNU GPL version 3',
-      packages=['pyxval']
+      packages=['pyxval', 'pyxval._tests']
      )
