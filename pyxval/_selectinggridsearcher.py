@@ -40,8 +40,6 @@ class SelectingGridSearcher(GridSearcher):
             classifier_kwargs={},
             selector_kwargs={},
             validator_kwargs={},
-            scorer_cls=DiscretePerfStats,
-            scorer_kwargs={},
             learn_func=None,
             predict_func=None,
             weights_func=None):
@@ -52,8 +50,6 @@ class SelectingGridSearcher(GridSearcher):
                 validator_kwargs,
                 gridsearch_kwargs,
                 classifier_kwargs,
-                scorer_cls,
-                scorer_kwargs,
                 learn_func,
                 predict_func,
                 weights_func

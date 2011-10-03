@@ -54,8 +54,6 @@ class SelectingNestedCrossValidator(CrossValidator):
             'classifier_kwargs': classifier_kwargs,
             'selector_kwargs': selector_kwargs,
             'validator_kwargs': { 'folds': folds-1 } if (validator_cls is None and len(validator_kwargs) == 0) else validator_kwargs,
-            'scorer_cls': scorer_cls,
-            'scorer_kwargs': scorer_kwargs,
             'learn_func': learn_func,
             'predict_func': predict_func,
             'weights_func': weights_func
