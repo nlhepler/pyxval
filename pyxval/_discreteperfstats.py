@@ -138,13 +138,14 @@ class DiscretePerfStats(BaseScorer):
         return str(DiscretePerfStats.todict(self))
 
     def __cmp__(self, other):
+        if other is None:
+            return 1
         assert(isinstance(other, DiscretePerfStats))
         if self.get(self.optstat) == other.get(other.optstat):
             return 0
         elif self.get(self.optstat) < other.get(other.optstat):
             return -1
-        else:
-            return 1
+        return 1
 
     def __unicode__(self):
         return unicode(DiscretePerfStats.todict(self))

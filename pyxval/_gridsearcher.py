@@ -20,12 +20,16 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from copy import deepcopy
+from sys import stderr
 from types import FunctionType
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 import numpy as np
 
-from _crossvalidator import CrossValidator
-from _discreteperfstats import DiscretePerfStats
 from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
 from _validationresult import ValidationResult
 
@@ -33,7 +37,19 @@ from _validationresult import ValidationResult
 __all__ = ['GridSearcher']
 
 
-# implement cross-validation interface here, grid-search optional
+def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
+    try:
+        kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
+        r = validator.validate(x, y, classifier_kwargs=kwargs)
+        r.kwargs = kwargs
+        return r
+    except Exception, e:
+        print 'ERROR:', e
+        return
+    except:
+        return
+
+
 class GridSearcher(object):
 
     def __init__(self,
@@ -42,8 +58,6 @@ class GridSearcher(object):
             gridsearch_kwargs,
             classifier_kwargs={},
             validator_kwargs={},
-            scorer_cls=DiscretePerfStats,
-            scorer_kwargs={},
             learn_func=None,
             predict_func=None,
             weights_func=None):
@@ -69,8 +83,6 @@ class GridSearcher(object):
         self.gridsearch_kwargs = gridsearch_kwargs
         self.classifier_cls = classifier_cls
         self.classifier_kwargs = classifier_kwargs
-        self.scorer_cls = scorer_cls
-        self.scorer_kwargs = scorer_kwargs
         self.classifier = None
         self.__computed = False
 
@@ -80,7 +92,6 @@ class GridSearcher(object):
                 raise ValueError('the `extra\' argument takes either a string or a _function.')
 
         kwargs = deepcopy(self.classifier_kwargs)
-        best = ValidationResult(None, self.scorer_cls(**self.scorer_kwargs), None, {})
 
         # this is tricky so try to follow...
         # define list L as the lengths of the parameter lists in gridsearch_kwargs
@@ -103,12 +114,44 @@ class GridSearcher(object):
         paramlist_lens.pop(0)
         assert(len(cumprod_lens) == len(paramlist_lens))
         itervars = [(i, paramlist_lens[i], cumprod_lens[i]) for i in xrange(len(cumprod_lens))]
+
+        _MULTIPROCESSING = True
+        try:
+            pickle.dumps(self.validator)
+        except pickle.PicklingError:
+            _MULTIPROCESSING = False
+
+        if _MULTIPROCESSING:
+            from multiprocessing import Pool, cpu_count
+            pool = Pool(cpu_count())
+        else:
+            from _fakemultiprocessing import FakePool
+            pool = FakePool()
+
+        results = [None] * totaldim
         for i in xrange(totaldim):
-            kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
-            r = self.validator.validate(x, y, classifier_kwargs=kwargs)
-            if r.stats > best.stats:
-                best = r
-                best.kwargs = deepcopy(kwargs)
+            results[i] = pool.apply_async(_run_instance,
+                (
+                    i,
+                    paramlists,
+                    itervars,
+                    self.validator,
+                    deepcopy(kwargs),
+                    x,
+                    y,
+                )
+            )
+
+        pool.close()
+
+        try:
+            pool.join()
+            best = max([r.get(0xFFFF) for r in results])
+        except KeyboardInterrupt, e:
+            [r.get(0xFFFF) for r in results]
+            pool.terminate()
+            pool.join()
+            raise e
 
         best.extra = self.validator.validate(self, x, y, classifier_kwargs=best.kwargs, extra=extra).extra if extra is not None else None
 

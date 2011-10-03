@@ -13,6 +13,7 @@ import unittest
 
 import numpy as np
 
+from pyxval import DiscretePerfStats
 from pyxval import CrossValidator
 from pyxval import GridSearcher
 
@@ -26,8 +27,8 @@ class TestGridSearcher(unittest.TestCase):
 
     def setUp(self):
         self.x = np.random.rand(10,3)
-        self.y = [0]*5
-        self.y.extend([1]*6)
+        self.y = [0]*4
+        self.y.extend([1]*7)
         random.shuffle(self.y)
 
     def test_gridsearcher_ndarrays_and_lists(self):
@@ -35,7 +36,11 @@ class TestGridSearcher(unittest.TestCase):
             Optimist,
             CrossValidator,
             gridsearch_kwargs={ 'c': xrange(5) },
-            validator_kwargs={ 'folds': 10 },
+            validator_kwargs={
+                'folds': 10,
+                'scorer_cls': DiscretePerfStats,
+                'scorer_kwargs': { 'optstat': DiscretePerfStats.ACCURACY },
+            },
             learn_func=Optimist.train
         )
         xlist = [list(row) for row in list(self.x)]

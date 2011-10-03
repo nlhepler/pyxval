@@ -62,7 +62,7 @@ class CrossValidator(Validator):
         self.folds = folds
         self.classifier_kwargs = classifier_kwargs
         self.scorer_cls = scorer_cls
-        self.scorer_kwargs = {}
+        self.scorer_kwargs = scorer_kwargs
 
     @staticmethod
     def __partition(l, folds):

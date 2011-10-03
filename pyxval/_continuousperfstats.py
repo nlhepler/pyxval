@@ -99,13 +99,14 @@ class ContinuousPerfStats(BaseScorer):
         return str(ContinuousPerfStats.todict(self))
 
     def __cmp__(self, other):
+        if other is None:
+            return 1
         assert(isinstance(other, ContinuousPerfStats))
         if self.get(self.optstat) == other.get(other.optstat):
             return 0
         elif self.get(self.optstat) < other.get(other.optstat):
             return -1
-        else:
-            return 1
+        return 1
 
     def __unicode__(self):
         return unicode(ContinuousPerfStats.todict(self))
