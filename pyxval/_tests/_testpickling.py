@@ -29,25 +29,37 @@ class TestPickling(unittest.TestCase):
     def setUp(self):
         pass
 
+    @staticmethod
+    def pickle_gridsearcher():
+        xgser = GridSearcher(
+                Optimist,
+                CrossValidator,
+                gridsearch_kwargs={ 'c': xrange(5) },
+                validator_kwargs={ 'folds': 10 },
+                learn_func=Optimist.train
+        )
+        pickle.dumps(xgser)
+
+    @staticmethod
+    def pickle_crossvalidator():
+        xvalor = CrossValidator(
+                Optimist,
+                folds=10,
+                learn_func=Optimist.train
+        )
+        pickle.dumps(xvalor)
+
     def test_pickle_gridsearcher(self):
-        with self.assertRaises(pickle.PicklingError) as cm:
-            xgser = GridSearcher(
-                    Optimist,
-                    CrossValidator,
-                    gridsearch_kwargs={ 'c': xrange(5) },
-                    validator_kwargs={ 'folds': 10 },
-                    learn_func=Optimist.train
-            )
-            pickle.dumps(xgser)
+        try:
+            self.pickle_gridsearcher()
+        except pickle.PicklingError:
+            self.skipTest('PicklingError expected')
 
     def test_pickle_crossvalidator(self):
-        with self.assertRaises(pickle.PicklingError) as cm:
-            xvalor = CrossValidator(
-                    Optimist,
-                    folds=10,
-                    learn_func=Optimist.train
-            )
-            pickle.dumps(xvalor)
+        try:
+            self.pickle_crossvalidator()
+        except pickle.PicklingError:
+            self.skipTest('PicklingError expected')
 
 
 if __name__ == '__main__':
