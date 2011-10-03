@@ -42,11 +42,7 @@ class TestPickling(unittest.TestCase):
 
     @staticmethod
     def pickle_crossvalidator():
-        xvalor = CrossValidator(
-                Optimist,
-                folds=10,
-                learn_func=Optimist.train
-        )
+        xvalor = CrossValidator(Optimist, 10, learn_func=Optimist.train)
         pickle.dumps(xvalor)
 
     def test_pickle_gridsearcher(self):

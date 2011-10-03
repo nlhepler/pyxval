@@ -20,16 +20,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from copy import deepcopy
-from sys import stderr
 from types import FunctionType
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 
 import numpy as np
 
+from _common import create_pool
 from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
 from _validationresult import ValidationResult
 
@@ -45,9 +40,9 @@ def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
         return r
     except Exception, e:
         print 'ERROR:', e
-        return
     except:
-        return
+        pass
+    return
 
 
 class GridSearcher(object):
@@ -115,18 +110,7 @@ class GridSearcher(object):
         assert(len(cumprod_lens) == len(paramlist_lens))
         itervars = [(i, paramlist_lens[i], cumprod_lens[i]) for i in xrange(len(cumprod_lens))]
 
-        _MULTIPROCESSING = True
-        try:
-            pickle.dumps(self.validator)
-        except pickle.PicklingError:
-            _MULTIPROCESSING = False
-
-        if _MULTIPROCESSING:
-            from multiprocessing import Pool, cpu_count
-            pool = Pool(cpu_count())
-        else:
-            from _fakemultiprocessing import FakePool
-            pool = FakePool()
+        pool = create_pool(self)
 
         results = [None] * totaldim
         for i in xrange(totaldim):

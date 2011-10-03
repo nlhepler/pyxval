@@ -28,6 +28,7 @@ from random import shuffle
 
 import numpy as np
 
+from _common import create_pool
 from _discreteperfstats import DiscretePerfStats
 from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
 from _validator import Validator
@@ -35,6 +36,46 @@ from _validationresult import ValidationResult
 
 
 __all__ = ['CrossValidator']
+
+
+def _run_instance(f, partition, x, y, classifier, extra):
+    try:
+        nrow = len(x)
+
+        inpart = [i for i in xrange(nrow) if partition[i] != f]
+        outpart = [i for i in xrange(nrow) if partition[i] == f]
+
+        if isinstance(x, np.ndarray):
+            xin = x[inpart, :]
+            xout = x[outpart, :]
+        else:
+            xin = [x[i] for i in inpart]
+            xout = [x[i] for i in outpart]
+
+        if isinstance(y, np.ndarray):
+            yin = y[inpart, :]
+            yout = y[outpart, :]
+        else:
+            yin = [y[i] for i in inpart]
+            yout = [y[i] for i in outpart]
+
+        # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
+
+        l = classifier.learn(xin, yin)
+        preds = classifier.predict(xout)
+
+        # do this after both learning and prediction just in case either performs some necessary computation
+        xtra = None
+        if extra is not None:
+            xtra = apply(getattr(classifier, extra),)
+
+        return l, xtra, yout, preds, classifier.weights()
+
+    except Exception, e:
+        print 'ERROR:', e
+    except:
+        pass
+    return
 
 
 # implement cross-validation interface here, grid-search optional
@@ -87,56 +128,53 @@ class CrossValidator(Validator):
         :returns: @todo figure this out
         '''
         if extra is not None:
-            if not isinstance(extra, types.StringTypes) and not isinstance(extra, types.MethodType):
+            if not isinstance(extra, types.StringTypes) and \
+               not isinstance(extra, types.MethodType) and \
+               not isinstance(extra, types.FunctionType):
                 raise ValueError('the `extra\' argument takes either a string or a method.')
 
+        if isinstance(extra, types.MethodType) or isinstance(extra, types.FunctionType):
+            extra = extra.__name__
+            assert(hasattr(self.classifier_cls, extra))
+
+        partition = CrossValidator.__partition(len(x), self.folds)
         kwargs = deepcopy(self.classifier_kwargs)
         kwargs.update(classifier_kwargs)
 
-        nrow = len(x)
+        results = [None] * self.folds
 
-        p = CrossValidator.__partition(nrow, self.folds)
+        pool = create_pool(self)
+
+        for f in xrange(self.folds):
+            results[f] = pool.apply_async(_run_instance, (
+                    f,
+                    partition,
+                    x,
+                    y,
+                    self.classifier_cls(**kwargs),
+                    extra
+                )
+            )
+
+        pool.close()
 
         stats = self.scorer_cls(**self.scorer_kwargs)
         lret = []
         xtra = []
 
-        for f in xrange(self.folds):
-            inpart = [i for i in xrange(nrow) if p[i] != f]
-            outpart = [i for i in xrange(nrow) if p[i] == f]
-
-            if isinstance(x, np.ndarray):
-                xin = x[inpart, :]
-                xout = x[outpart, :]
-            else:
-                xin = [x[i] for i in inpart]
-                xout = [x[i] for i in outpart]
-
-            if isinstance(y, np.ndarray):
-                yin = y[inpart, :]
-                yout = y[outpart, :]
-            else:
-                yin = [y[i] for i in inpart]
-                yout = [y[i] for i in outpart]
-
-            # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
-
-            classifier = self.classifier_cls(**kwargs)
-
-            l = classifier.learn(xin, yin)
-            if l is not None:
-                lret.append(l)
-
-            preds = classifier.predict(xout)
-
-            # do this after both learning and prediction just in case either performs some necessary computation
-            if extra is not None:
-                if isinstance(extra, types.StringTypes):
-                    xtra.append(apply(getattr(classifier, extra),))
-                elif isinstance(extra, types.MethodType):
-                    xtra.append(apply(extra, (classifier,)))
-
-            stats.append(yout, preds, classifier.weights())
+        try:
+            pool.join()
+            for l, x, t, p, w in [r.get(0xFFFF) for r in results]:
+                if l is not None:
+                    lret.append(l)
+                if x is not None:
+                    xtra.append(x)
+                stats.append(t, p, w)
+        except KeyboardInterrupt, e:
+            [r.get(0xFFFF) for r in results]
+            pool.terminate()
+            pool.join()
+            raise e
 
         return ValidationResult(
             lret if len(lret) else None,

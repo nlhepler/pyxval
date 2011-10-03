@@ -26,24 +26,22 @@ class TestCrossValidator(unittest.TestCase):
 
     def setUp(self):
         self.x = np.random.rand(10,3)
-        self.y = [0]*5
-        self.y.extend([1]*5)
+        self.y = [0]*5 + [1]*5
         random.shuffle(self.y)
 
     def test_crossvalidator_ndarrays_and_lists(self):
         xvalor = CrossValidator(Optimist, 10, learn_func=Optimist.train)
-        xlist = [list(row) for row in list(self.x)]
 
         #test using ndarray types for x and y
         rv = xvalor.crossvalidate(self.x, np.array(self.y))
         self.assertEqual(rv.stats.get(DiscretePerfStats.ACCURACY).mu, 0.5)
 
         #test using lists for x and y
-        rv = xvalor.validate(xlist, self.y)
+        rv = xvalor.validate(self.x.tolist(), self.y)
         self.assertEqual(rv.stats.get(DiscretePerfStats.ACCURACY).mu, 0.5)
 
         #using list for x and ndarray for y
-        rv = xvalor.crossvalidate(xlist, np.array(self.y))
+        rv = xvalor.crossvalidate(self.x.tolist(), np.array(self.y))
         self.assertEqual(rv.stats.get(DiscretePerfStats.ACCURACY).mu, 0.5)
 
         #using ndarray for x and list for y

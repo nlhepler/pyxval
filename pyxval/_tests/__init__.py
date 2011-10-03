@@ -6,7 +6,7 @@ Created on 10/1/11
 @author: brent
 '''
 
-__author__ = 'brent'
+__author__ = 'Brent Payne'
 
 
 from _testcrossvalidator import TestCrossValidator

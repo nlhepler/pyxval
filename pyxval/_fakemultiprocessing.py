@@ -47,6 +47,10 @@ class FakePool(object):
         return FakeResult(apply(f, args))
 
     @staticmethod
+    def terminate():
+        pass
+
+    @staticmethod
     def close():
         pass
 

@@ -126,7 +126,7 @@ class DiscretePerfStats(BaseScorer):
 
         tps = truth > 0.
         pps = preds > 0.
-                                                               # true pos    true neg    false pos   false neg
+                                                               # true pos    true neg        false pos     false neg
         tp, tn, fp, fn = map(lambda a: np.sum(np.multiply(*a)), [(tps, pps), (1-tps, 1-pps), (1-tps, pps), (tps, 1-pps)])
 
         return tp, tn, fp, fn
