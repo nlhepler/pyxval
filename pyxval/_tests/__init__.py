@@ -11,6 +11,7 @@ __author__ = 'Brent Payne'
 
 from _testcrossvalidator import TestCrossValidator
 from _testgridsearcher import TestGridSearcher
+from _testnestedcrossvalidator import TestNestedCrossValidator
 from _testpickling import TestPickling
 
 __all__ = []

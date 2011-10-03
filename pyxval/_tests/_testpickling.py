@@ -15,8 +15,7 @@ try:
 except ImportError:
     import pickle
 
-from pyxval import CrossValidator
-from pyxval import GridSearcher
+from pyxval import CrossValidator, DiscretePerfStats, GridSearcher, NestedCrossValidator
 
 from _optimist import Optimist
 
@@ -45,6 +44,24 @@ class TestPickling(unittest.TestCase):
         xvalor = CrossValidator(Optimist, 10, learn_func=Optimist.train)
         pickle.dumps(xvalor)
 
+    @staticmethod
+    def pickle_nestedcrossvalidator():
+        nxvalor = NestedCrossValidator(
+                Optimist,
+                10,
+                { 'c': xrange(5) },
+                validator_cls=CrossValidator,
+                validator_kwargs={
+                    'folds': 9,
+                    'scorer_cls': DiscretePerfStats,
+                    'scorer_kwargs': {
+                        'optstat': DiscretePerfStats.ACCURACY
+                    }
+                },
+                learn_func=Optimist.train
+        )
+        pickle.dumps(nxvalor)
+
     def test_pickle_gridsearcher(self):
         try:
             self.pickle_gridsearcher()
@@ -54,6 +71,12 @@ class TestPickling(unittest.TestCase):
     def test_pickle_crossvalidator(self):
         try:
             self.pickle_crossvalidator()
+        except pickle.PicklingError:
+            self.skipTest('PicklingError expected')
+
+    def test_pickle_nestedcrossvalidator(self):
+        try:
+            self.pickle_nestedcrossvalidator()
         except pickle.PicklingError:
             self.skipTest('PicklingError expected')
 

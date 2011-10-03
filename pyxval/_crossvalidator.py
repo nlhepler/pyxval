@@ -67,8 +67,10 @@ def _run_instance(f, partition, x, y, classifier, extra):
         # do this after both learning and prediction just in case either performs some necessary computation
         xtra = None
         if extra is not None:
-            xtra = apply(getattr(classifier, extra),)
-
+            if isinstance(extra, types.StringTypes):
+                xtra = apply(getattr(classifier, extra),)
+            elif isinstance(extra, types.FunctionType):
+                xtra = extra(classifier)
         return l, xtra, yout, preds, classifier.weights()
 
     except Exception, e:
@@ -133,7 +135,7 @@ class CrossValidator(Validator):
                not isinstance(extra, types.FunctionType):
                 raise ValueError('the `extra\' argument takes either a string or a method.')
 
-        if isinstance(extra, types.MethodType) or isinstance(extra, types.FunctionType):
+        if isinstance(extra, types.MethodType):
             extra = extra.__name__
             assert(hasattr(self.classifier_cls, extra))
 

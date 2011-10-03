@@ -20,6 +20,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from copy import deepcopy
+from types import FunctionType, MethodType
 
 from _crossvalidator import CrossValidator
 from _gridsearcher import GridSearcher
@@ -44,6 +45,15 @@ class NestedCrossValidator(CrossValidator):
             predict_func=None,
             weights_func=None):
 
+        FunctionTypes = (FunctionType, MethodType)
+        # due to some stupidity in pickle, we need to make these strings here
+        if isinstance(learn_func, FunctionTypes):
+            learn_func = learn_func.__name__
+        if isinstance(predict_func, FunctionTypes):
+            predict_func = predict_func.__name__
+        if isinstance(weights_func, FunctionTypes):
+            weights_func = weights_func.__name__
+
         gridsearcher_kwargs = {
             'classifier_cls': classifier_cls,
             'validator_cls': CrossValidator if validator_cls is None else validator_cls,
@@ -60,8 +70,6 @@ class NestedCrossValidator(CrossValidator):
                 folds,
                 gridsearcher_kwargs,
                 scorer_cls,
-                scorer_kwargs,
-                learn_func,
-                predict_func,
-                weights_func
+                scorer_kwargs
+                # learn_func, predict_func, and weights_func are all default in GridSearcher
         )

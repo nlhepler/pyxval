@@ -45,14 +45,14 @@ class SelectingGridSearcher(GridSearcher):
             weights_func=None):
 
         super(SelectingGridSearcher, self).__init__(
-                classifier_cls,
-                validator_cls,
-                validator_kwargs,
-                gridsearch_kwargs,
-                classifier_kwargs,
-                learn_func,
-                predict_func,
-                weights_func
+            classifier_cls,
+            validator_cls,
+            gridsearch_kwargs,
+            classifier_kwargs,
+            validator_kwargs,
+            learn_func,
+            predict_func,
+            weights_func
         )
         self.__selected = False
         self.selector = selector_cls(**selector_kwargs)

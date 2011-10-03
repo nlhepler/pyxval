@@ -64,8 +64,6 @@ class SelectingNestedCrossValidator(CrossValidator):
                 folds,
                 gridsearcher_kwargs,
                 scorer_cls,
-                scorer_kwargs,
-                learn_func,
-                predict_func,
-                weights_func
+                scorer_kwargs
+                # learn_func, predict_func, and weights_func are all defaults in SelectingGridSearcher 
         )

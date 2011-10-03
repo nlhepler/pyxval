@@ -151,6 +151,7 @@ class GridSearcher(object):
         # print 'optimum parameters:', gsret['kwargs']
 
         self.classifier = self.classifier_cls(**gsret.kwargs)
+
         # I don't like unmangling the private name, but here it is..
         lret = self.classifier.learn(x, y)
 
