@@ -84,7 +84,9 @@ class DiscretePerfStats(BaseScorer):
 
         return acc, ppv, npv, sen, spe, fsc, mst
 
-    def get(self, stat):
+    def get(self, stat=None):
+        if stat is None:
+            stat = self.optstat
         if stat == DiscretePerfStats.ACCURACY:
             return self.accuracy
         elif stat == DiscretePerfStats.PPV:
