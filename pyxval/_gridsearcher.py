@@ -112,12 +112,15 @@ class GridSearcher(object):
         assert(len(cumprod_lens) == len(paramlist_lens))
         itervars = [(i, paramlist_lens[i], cumprod_lens[i]) for i in xrange(len(cumprod_lens))]
 
+        pool = None
+
         try:
             results = [None] * totaldim
             attempts = 3
             do_idxs = xrange(totaldim)
             for _ in xrange(attempts):
                 pool = create_pool(self)
+
                 for i in do_idxs:
                     results[i] = pool.apply_async(_run_instance,
                         (
@@ -152,6 +155,9 @@ class GridSearcher(object):
             best = max(results)
 
         except KeyboardInterrupt, e:
+            if pool is not None:
+                pool.terminate()
+                pool.join()
             if current_process().daemon:
                 return e
             else:

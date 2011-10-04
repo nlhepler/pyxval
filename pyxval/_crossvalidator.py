@@ -143,6 +143,8 @@ class CrossValidator(Validator):
         kwargs = deepcopy(self.classifier_kwargs)
         kwargs.update(classifier_kwargs)
 
+        pool = None
+
         try:
             results = [None] * self.folds
             attempts = 3
@@ -191,6 +193,9 @@ class CrossValidator(Validator):
                 stats.append(t, p, w)
 
         except KeyboardInterrupt, e:
+            if pool is not None:
+                pool.terminate()
+                pool.join()
             if current_process().daemon:
                 return e
             else:
