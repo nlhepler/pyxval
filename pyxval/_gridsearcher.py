@@ -152,6 +152,9 @@ class GridSearcher(object):
             if len(excs):
                 raise excs[0]
 
+            if not all([isinstance(r, ValidationResult) for r in results]):
+                raise RuntimeError('error: random and unknown weirdness has occurred in your classifier')
+
             best = max(results)
 
         except KeyboardInterrupt, e:

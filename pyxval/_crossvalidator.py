@@ -181,6 +181,9 @@ class CrossValidator(Validator):
             if len(excs):
                 raise excs[0]
 
+            if not all([isinstance(r, types.TupleType) and len(r) == 5 for r in results]):
+                raise RuntimeError('error: random and unknown weirdness has occurred in your classifier')
+
             stats = self.scorer_cls(**self.scorer_kwargs)
             lret = []
             xtra = []
