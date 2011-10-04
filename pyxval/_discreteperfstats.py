@@ -139,6 +139,9 @@ class DiscretePerfStats(BaseScorer):
     def __str__(self):
         return str(DiscretePerfStats.todict(self))
 
+    def __eq__(self, other):
+        return isinstance(other, DiscretePerfStats) and cmp(self, other) == 0
+
     def __cmp__(self, other):
         if other is None:
             return 1

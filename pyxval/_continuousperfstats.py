@@ -98,6 +98,9 @@ class ContinuousPerfStats(BaseScorer):
     def __str__(self):
         return str(ContinuousPerfStats.todict(self))
 
+    def __eq__(self, other):
+        return isinstance(other, ContinuousPerfStats) and cmp(self, other) == 0
+
     def __cmp__(self, other):
         if other is None:
             return 1

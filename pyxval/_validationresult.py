@@ -19,6 +19,9 @@ class ValidationResult(object):
             'gridsearch': self.gridsearch
         })
 
+    def __eq__(self, other):
+        return isinstance(other, ValidationResult) and id(self) == id(other)
+
     def __cmp__(self, other):
         assert(isinstance(other, ValidationResult))
         return cmp(self.stats, other.stats)

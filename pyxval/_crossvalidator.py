@@ -19,11 +19,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import types
+import sys, types
 
 from copy import deepcopy
 from itertools import chain
 from math import floor
+from multiprocessing import current_process
 from random import shuffle
 
 import numpy as np
@@ -73,11 +74,10 @@ def _run_instance(f, partition, x, y, classifier, extra):
                 xtra = extra(classifier)
         return l, xtra, yout, preds, classifier.weights()
 
-    except Exception, e:
-        print 'ERROR:', e
+    except KeyboardInterrupt:
+        return KeyboardInterrupt
     except:
-        pass
-    return
+        return sys.exc_info()[0]
 
 
 # implement cross-validation interface here, grid-search optional
@@ -143,40 +143,59 @@ class CrossValidator(Validator):
         kwargs = deepcopy(self.classifier_kwargs)
         kwargs.update(classifier_kwargs)
 
-        results = [None] * self.folds
-
-        pool = create_pool(self)
-
-        for f in xrange(self.folds):
-            results[f] = pool.apply_async(_run_instance, (
-                    f,
-                    partition,
-                    x,
-                    y,
-                    self.classifier_cls(**kwargs),
-                    extra
-                )
-            )
-
-        pool.close()
-
-        stats = self.scorer_cls(**self.scorer_kwargs)
-        lret = []
-        xtra = []
-
         try:
-            pool.join()
-            for l, x, t, p, w in [r.get(0xFFFF) for r in results]:
+            results = [None] * self.folds
+            attempts = 3
+            do_folds = xrange(self.folds)
+            for _ in xrange(attempts):
+                pool = create_pool(self)
+
+                for f in do_folds:
+                    results[f] = pool.apply_async(_run_instance, (
+                            f,
+                            partition,
+                            x,
+                            y,
+                            self.classifier_cls(**kwargs),
+                            extra
+                        )
+                    )
+
+                pool.close()
+                pool.join()
+
+                results = [r.get(0xFFFF) for r in results] # 65535s
+
+                # raise any exceptions we see
+                if KeyboardInterrupt in results:
+                    raise KeyboardInterrupt
+                elif all([isinstance(r, types.TupleType) and len(r) == 5 for r in results]):
+                    # we're done!!!
+                    break
+                else:
+                    do_folds = [f for f, r in enumerate(results) if not isinstance(r, types.TupleType) or len(r) != 5]
+
+            excs = [e for e in results if isinstance(e, Exception)]
+            if len(excs):
+                raise excs[0]
+
+            stats = self.scorer_cls(**self.scorer_kwargs)
+            lret = []
+            xtra = []
+
+            for l, x, t, p, w in results:
                 if l is not None:
                     lret.append(l)
                 if x is not None:
                     xtra.append(x)
                 stats.append(t, p, w)
+
         except KeyboardInterrupt, e:
-            [r.get(0xFFFF) for r in results]
-            pool.terminate()
-            pool.join()
-            raise e
+            if current_process().daemon:
+                return e
+            else:
+                print 'caught ^C (keyboard interrupt), exiting ...'
+                sys.exit(-1)
 
         return ValidationResult(
             lret if len(lret) else None,

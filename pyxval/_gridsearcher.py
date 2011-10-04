@@ -1,26 +1,29 @@
 # pyxval :: (Python CROSS-VALidation) python libraries containing some useful
 # machine learning interfaces and utilities for regression and discrete
 # prediction (including cross-validation, grid-search, and performance
-# statistics) 
-# 
-# Copyright (C) 2011 N Lance Hepler <nlhepler@gmail.com> 
-# 
+# statistics)
+#
+# Copyright (C) 2011 N Lance Hepler <nlhepler@gmail.com>
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import sys
+
 from copy import deepcopy
-from types import FunctionType
+from multiprocessing import current_process
+from types import FunctionType, MethodType, StringTypes
 
 import numpy as np
 
@@ -38,11 +41,10 @@ def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
         r = validator.validate(x, y, classifier_kwargs=kwargs)
         r.kwargs = kwargs
         return r
-    except Exception, e:
-        print 'ERROR:', e
+    except KeyboardInterrupt, e:
+        return e
     except:
-        pass
-    return
+        return sys.exc_info()[0]
 
 
 class GridSearcher(object):
@@ -83,14 +85,14 @@ class GridSearcher(object):
 
     def gridsearch(self, x, y, classifier_kwargs={}, extra=None):
         if extra is not None:
-            if not isinstance(extra, str) and not isinstance(extra, FunctionType):
-                raise ValueError('the `extra\' argument takes either a string or a _function.')
+            if not isinstance(extra, StringTypes + FunctionType + MethodType):
+                raise ValueError('the `extra\' argument takes either a string or a function.')
 
         kwargs = deepcopy(self.classifier_kwargs)
 
         # this is tricky so try to follow...
         # define list L as the lengths of the parameter lists in gridsearch_kwargs
-        # define K as the number of total dimensions to the grid_search 
+        # define K as the number of total dimensions to the grid_search
         # then itervars looks like:
         #   [(0, L[0], 1), (1, L[1], L[0]), (2, L[2], L[0]*L[1]), ..., (K-1, L[K-1], prod_{i=1}^{K-2}(L[i]))]
         # the three-tuple with values (j, l, and den) refer to the following:
@@ -100,7 +102,7 @@ class GridSearcher(object):
         # for each iteration 0-indexed i, the value of each parameter is calculated (i / den) % l,
         # where den allows us to tick forward for each parameter j only after we've completed iterating
         # through all possible 0..j-1 parameter combinations, and a modulus by l ensures we're
-        # properly wrapping around for each parameter list j. 
+        # properly wrapping around for each parameter list j.
         paramlists = self.gridsearch_kwargs.items()
         paramlist_lens = [1] + [len(v) for _, v in paramlists]
         cumprod_lens = np.cumprod(np.array(paramlist_lens, dtype=int)).tolist()
@@ -110,33 +112,53 @@ class GridSearcher(object):
         assert(len(cumprod_lens) == len(paramlist_lens))
         itervars = [(i, paramlist_lens[i], cumprod_lens[i]) for i in xrange(len(cumprod_lens))]
 
-        pool = create_pool(self)
-
-        results = [None] * totaldim
-        for i in xrange(totaldim):
-            results[i] = pool.apply_async(_run_instance,
-                (
-                    i,
-                    paramlists,
-                    itervars,
-                    self.validator,
-                    deepcopy(kwargs),
-                    x,
-                    y,
-                )
-            )
-
-        pool.close()
-
         try:
-            pool.join()
-            best = max([r.get(0xFFFF) for r in results])
-        except KeyboardInterrupt, e:
-            [r.get(0xFFFF) for r in results]
-            pool.terminate()
-            pool.join()
-            raise e
+            results = [None] * totaldim
+            attempts = 3
+            do_idxs = xrange(totaldim)
+            for _ in xrange(attempts):
+                pool = create_pool(self)
+                for i in do_idxs:
+                    results[i] = pool.apply_async(_run_instance,
+                        (
+                            i,
+                            paramlists,
+                            itervars,
+                            self.validator,
+                            deepcopy(kwargs),
+                            x,
+                            y,
+                        )
+                    )
 
+                pool.close()
+                pool.join()
+
+                results = [r.get(0xFFFF) for r in results] # 65535s
+
+                if KeyboardInterrupt in results:
+                    raise KeyboardInterrupt
+                elif all([isinstance(r, ValidationResult) for r in results]):
+                    # we're done! 
+                    break
+                else:
+                    # what broke? try them again
+                    do_idxs = [i for i, r in enumerate(results) if not isinstance(r, ValidationResult)]
+
+            excs = [e for e in results if isinstance(e, Exception)]
+            if len(excs):
+                raise excs[0]
+
+            best = max(results)
+
+        except KeyboardInterrupt, e:
+            if current_process().daemon:
+                return e
+            else:
+                print >> sys.stderr, 'caught ^C (keyboard interrupt), exiting...'
+                sys.exit(-1)
+
+        # do this one more time if we get an extra
         best.extra = self.validator.validate(self, x, y, classifier_kwargs=best.kwargs, extra=extra).extra if extra is not None else None
 
 #         print ret['kwargs']
