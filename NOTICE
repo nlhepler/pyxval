@@ -1,9 +1,10 @@
-pyxval :: (Python CROSS-VALidation) python libraries containing some useful
-machine learning interfaces and utilities for regression and discrete
+pyxval :: (Python CROSS-VALidation) A Python library containing some useful
+machine learning interfaces and utilities for supervised learning and 
 prediction (including cross-validation, grid-search, and performance
 statistics) 
 
 Copyright (C) 2011 N Lance Hepler <nlhepler@gmail.com> 
+Copyright (C) 2011 Brent Payne <brent.payne@gmail.com> 
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
