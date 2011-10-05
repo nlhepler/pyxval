@@ -166,7 +166,8 @@ class CrossValidator(Validator):
                 pool.close()
                 pool.join()
 
-                results = [r.get(0xFFFF) for r in results] # 65535s
+                for f in do_folds:
+                    results[f] = results[f].get(0xFFFF) # 65535s
 
                 # raise any exceptions we see
                 if KeyboardInterrupt in results:

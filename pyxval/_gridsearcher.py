@@ -137,7 +137,8 @@ class GridSearcher(object):
                 pool.close()
                 pool.join()
 
-                results = [r.get(0xFFFF) for r in results] # 65535s
+                for i in do_idxs:
+                    results[i] = results[i].get(0xFFFF) # 65535s
 
                 if KeyboardInterrupt in results:
                     raise KeyboardInterrupt
