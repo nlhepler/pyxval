@@ -78,7 +78,7 @@ def _run_instance(f, partition, x, y, classifier, extra):
     except KeyboardInterrupt:
         return KeyboardInterrupt
     except:
-        return sys.exc_info()[0]
+        return sys.exc_info()
 
 
 # implement cross-validation interface here, grid-search optional
@@ -179,11 +179,12 @@ class CrossValidator(Validator):
                 else:
                     do_folds = [f for f, r in enumerate(results) if not isinstance(r, types.TupleType) or len(r) != 5]
 
-            excs = [e for e in results if isinstance(e, Exception)]
+            excs = [e for e in results if isinstance(e, types.TupleType) and len(e) == 3 and issubclass(e[0], Exception)]
             if len(excs):
                 raise excs[0]
 
             if not all([isinstance(r, types.TupleType) and len(r) == 5 for r in results]):
+                print results
                 raise RuntimeError('error: random and unknown weirdness has occurred in your classifier')
 
             stats = self.scorer_cls(**self.scorer_kwargs)
