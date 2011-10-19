@@ -24,7 +24,7 @@ import sys
 
 from copy import deepcopy
 from multiprocessing import current_process
-from types import FunctionType, MethodType, StringTypes
+from types import FunctionType, MethodType, StringTypes, TupleType
 
 import numpy as np
 
@@ -45,7 +45,7 @@ def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
     except KeyboardInterrupt, e:
         return e
     except:
-        return sys.exc_info()[0]
+        return sys.exc_info()
 
 
 class GridSearcher(object):
@@ -150,7 +150,7 @@ class GridSearcher(object):
                     # what broke? try them again
                     do_idxs = [i for i, r in enumerate(results) if not isinstance(r, ValidationResult)]
 
-            excs = [e for e in results if isinstance(e, Exception)]
+            excs = [e for e in results if isinstance(e, TupleType) and len(e) == 3 and issubclass(e[0], Exception)]
             if len(excs):
                 raise excs[0]
 
