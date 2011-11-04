@@ -21,7 +21,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from multiprocessing import current_process
-from sys import stderr
 
 try:
     import cPickle as pickle

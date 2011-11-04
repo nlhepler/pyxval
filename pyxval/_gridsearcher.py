@@ -150,7 +150,7 @@ class GridSearcher(object):
                     # what broke? try them again
                     do_idxs = [i for i, r in enumerate(results) if not isinstance(r, ValidationResult)]
 
-            excs = [e for e in results if isinstance(e, TupleType) and len(e) == 3 and issubclass(e[0], Exception)]
+            excs = [e for e in results if isinstance(e, TupleType) and len(e) == 3 and isinstance(e, Exception)]
             if len(excs):
                 raise excs[0]
 
