@@ -45,7 +45,7 @@ def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
     except KeyboardInterrupt, e:
         return e
     except:
-        return sys.exc_info()
+        return sys.exc_info()[1]
 
 
 class GridSearcher(object):

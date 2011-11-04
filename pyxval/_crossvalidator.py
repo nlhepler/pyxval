@@ -78,7 +78,7 @@ def _run_instance(f, partition, x, y, classifier, extra):
     except KeyboardInterrupt:
         return KeyboardInterrupt
     except:
-        return sys.exc_info()
+        return sys.exc_info()[1]
 
 
 # implement cross-validation interface here, grid-search optional
