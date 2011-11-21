@@ -31,9 +31,7 @@ __all__ = ['ContinuousPerfStats']
 
 class ContinuousPerfStats(BaseScorer):
 
-    RBARSQUARED         = 0
-    RSQUARED            = 1
-    RMSE                = 2
+    RBARSQUARED, RSQUARED, RMSE = xrange(3)
 
     def __init__(self, optstat=None):
 
