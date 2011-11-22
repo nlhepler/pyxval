@@ -20,7 +20,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import sys, types
+import logging, sys, types
 
 from copy import deepcopy
 from itertools import chain
@@ -32,6 +32,7 @@ import numpy as np
 
 from _common import create_pool
 from _discreteperfstats import DiscretePerfStats
+from _logging import PYXVAL_LOGGER
 from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
 from _validator import Validator
 from _validationresult import ValidationResult
@@ -63,7 +64,12 @@ def _run_instance(f, partition, x, y, classifier, extra):
 
         # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
 
+        # log = logging.getLogger(PYXVAL_LOGGER)
+
+        # log.debug('training fold %d' % (f + 1))
         l = classifier.learn(xin, yin)
+
+        # log.debug('predicting fold %d' % (f + 1))
         preds = classifier.predict(xout)
 
         # do this after both learning and prediction just in case either performs some necessary computation
@@ -140,6 +146,9 @@ class CrossValidator(Validator):
             extra = extra.__name__
             assert(hasattr(self.classifier_cls, extra))
 
+        log = logging.getLogger(PYXVAL_LOGGER)
+        log.debug('beginning %d-fold crossvalidation' % self.folds)
+
         partition = CrossValidator.__partition(len(x), self.folds)
         kwargs = deepcopy(self.classifier_kwargs)
         kwargs.update(classifier_kwargs)
@@ -207,6 +216,8 @@ class CrossValidator(Validator):
             else:
                 print 'caught ^C (keyboard interrupt), exiting ...'
                 sys.exit(-1)
+
+        log.debug('finished %d-fold crossvalidation' % self.folds)
 
         return ValidationResult(
             lret if len(lret) else None,

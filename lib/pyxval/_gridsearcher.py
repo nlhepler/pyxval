@@ -20,7 +20,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import sys
+import logging, sys
 
 from copy import deepcopy
 from multiprocessing import current_process
@@ -29,6 +29,7 @@ from types import FunctionType, MethodType, StringTypes, TupleType
 import numpy as np
 
 from _common import create_pool
+from _logging import PYXVAL_LOGGER
 from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
 from _validationresult import ValidationResult
 
@@ -39,7 +40,10 @@ __all__ = ['GridSearcher']
 def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
     try:
         kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
+        log = logging.getLogger(PYXVAL_LOGGER)
+        log.debug('validating combination (%d) with arguments: %s' % (i + 1, str(kwargs)))
         r = validator.validate(x, y, classifier_kwargs=kwargs)
+        log.debug('combination (%d) performance statistics: %s' % (i + 1, r.stats))
         r.kwargs = kwargs
         return r
     except KeyboardInterrupt, e:
@@ -115,6 +119,9 @@ class GridSearcher(object):
 
         pool = None
 
+        log = logging.getLogger(PYXVAL_LOGGER)
+        log.debug('beginning grid search over %d variables (%d combinations)' % (len(paramlists), totaldim))
+
         try:
             results = [None] * totaldim
             attempts = 3
@@ -168,6 +175,8 @@ class GridSearcher(object):
             else:
                 print >> sys.stderr, 'caught ^C (keyboard interrupt), exiting...'
                 sys.exit(-1)
+
+        log.debug('finished grid search')
 
         # do this one more time if we get an extra
         best.extra = self.validator.validate(self, x, y, classifier_kwargs=best.kwargs, extra=extra).extra if extra is not None else None
