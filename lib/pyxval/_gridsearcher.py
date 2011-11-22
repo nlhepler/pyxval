@@ -176,7 +176,7 @@ class GridSearcher(object):
                 print >> sys.stderr, 'caught ^C (keyboard interrupt), exiting...'
                 sys.exit(-1)
 
-        log.debug('finished grid search: args: %s, with stats: %s' % (r.kwargs, r.stats))
+        log.debug('finished grid search, best args: %s give stats: %s' % (r.kwargs, r.stats))
 
         # do this one more time if we get an extra
         best.extra = self.validator.validate(self, x, y, classifier_kwargs=best.kwargs, extra=extra).extra if extra is not None else None
