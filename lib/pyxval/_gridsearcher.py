@@ -41,9 +41,9 @@ def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
     try:
         kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
         log = logging.getLogger(PYXVAL_LOGGER)
-        log.debug('validating combination (%d) with arguments: %s' % (i + 1, str(kwargs)))
+        log.debug('validating combination (%d) with args: %s' % (i + 1, str(kwargs)))
         r = validator.validate(x, y, classifier_kwargs=kwargs)
-        log.debug('combination (%d) performance statistics: %s' % (i + 1, r.stats))
+        log.debug('combination (%d) performance stats: %s' % (i + 1, r.stats))
         r.kwargs = kwargs
         return r
     except KeyboardInterrupt, e:
@@ -176,7 +176,7 @@ class GridSearcher(object):
                 print >> sys.stderr, 'caught ^C (keyboard interrupt), exiting...'
                 sys.exit(-1)
 
-        log.debug('finished grid search')
+        log.debug('finished grid search: args: %s, with stats: %s' % (r.kwargs, r.stats))
 
         # do this one more time if we get an extra
         best.extra = self.validator.validate(self, x, y, classifier_kwargs=best.kwargs, extra=extra).extra if extra is not None else None
