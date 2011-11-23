@@ -1,4 +1,6 @@
 
+import logging
+
 from multiprocessing import Pool, cpu_count, current_process
 from os import getenv
 from sys import exc_info, exit as sys_exit, stderr
@@ -9,8 +11,29 @@ except ImportError:
     import pickle
 
 
-__all__ = ['FakeLock', 'FakeResult', 'FakePool', 'create_pool', 'farmout', 'farmworker']
+__all__ = [
+    'FAKEMP_LOGGER',
+    'FakeLock',
+    'FakeResult',
+    'FakePool',
+    'create_pool',
+    'farmout',
+    'farmworker'
+]
+
 __version__ = '0.9.1'
+
+FAKEMP_LOGGER = '2dTXjMDeFheXx5QjWZmz8XHz'
+
+_mp = None
+
+
+def _setup_log():
+    h = logging.StreamHandler()
+    f = logging.Formatter('%(levelname)s %(asctime)s %(process)d FAKEMP %(funcName)s: %(message)s')
+    h.setFormatter(f)
+    logging.getLogger(FAKEMP_LOGGER).addHandler(h)
+_setup_log()
 
 
 class FakeLock(object):
@@ -59,22 +82,33 @@ class FakeResult(object):
 
 
 def create_pool(pickletest):
-    mp = getenv('PYMP', 'true').lower().strip()
+    global _mp
 
-    try:
-        mp = False if mp == 'false' else True if mp == 'true' else bool(int(mp))
-    except ValueError:
-        mp = False
+    log = logging.getLogger(FAKEMP_LOGGER)
 
-    mp = mp and not current_process().daemon
+    if _mp is None:
+        mp = getenv('PYMP', 'true').lower().strip()
 
-    if pickletest is False:
+        try:
+            _mp = False if mp == 'false' else True if mp == 'true' else bool(int(mp))
+        except ValueError:
+            _mp = False
+
+        if not _mp:
+            log.debug('multiprocessing disabled at request of PYMP environment var')
+
+    mp = _mp and not current_process().daemon
+
+    if mp is False:
+        pass
+    elif pickletest is False:
         mp = False
     else:
         try:
             pickle.dumps(pickletest)
         except pickle.PicklingError:
             mp = False
+            log.debug('multiprocessing disabled because pickle cannot handle given objects')
 
     if mp:
         pool = Pool(cpu_count())
