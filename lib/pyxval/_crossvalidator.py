@@ -25,7 +25,6 @@ import logging, sys, types
 from copy import deepcopy
 from itertools import chain
 from math import floor
-from multiprocessing import current_process
 from random import shuffle
 
 import numpy as np

@@ -23,7 +23,6 @@
 import logging, sys
 
 from copy import deepcopy
-from multiprocessing import current_process
 from types import FunctionType, MethodType, StringTypes, TupleType
 
 import numpy as np
