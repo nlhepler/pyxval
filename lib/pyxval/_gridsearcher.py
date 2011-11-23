@@ -44,7 +44,8 @@ def _gridsearcher(i, paramlists, itervars, validator, kwargs, x, y):
     kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
     log = logging.getLogger(PYXVAL_LOGGER)
     log.debug('validating combination (%d) with args: %s' % (i + 1, str(kwargs)))
-    r = validator.validate(x, y, classifier_kwargs=kwargs)
+    # disable parallelization here, if it's enabled it will be done over this function
+    r = validator.validate(x, y, classifier_kwargs=kwargs, parallel=False)
     log.debug('combination (%d) performance stats: %s' % (i + 1, r.stats))
     r.kwargs = kwargs
     return r
