@@ -30,7 +30,11 @@ from random import shuffle
 
 import numpy as np
 
-from _common import create_pool
+try:
+    from fakemp import farmout, farmworker
+except ImportError:
+    from _fakemp import farmout, farmworker
+
 from _discreteperfstats import DiscretePerfStats
 from _logging import PYXVAL_LOGGER
 from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
@@ -41,50 +45,44 @@ from _validationresult import ValidationResult
 __all__ = ['CrossValidator']
 
 
-def _run_instance(f, partition, x, y, classifier, extra):
-    try:
-        nrow = len(x)
+def _folder(f, partition, x, y, classifier, extra):
+    nrow = len(x)
 
-        inpart = [i for i in xrange(nrow) if partition[i] != f]
-        outpart = [i for i in xrange(nrow) if partition[i] == f]
+    inpart = [i for i in xrange(nrow) if partition[i] != f]
+    outpart = [i for i in xrange(nrow) if partition[i] == f]
 
-        if isinstance(x, np.ndarray):
-            xin = x[inpart, :]
-            xout = x[outpart, :]
-        else:
-            xin = [x[i] for i in inpart]
-            xout = [x[i] for i in outpart]
+    if isinstance(x, np.ndarray):
+        xin = x[inpart, :]
+        xout = x[outpart, :]
+    else:
+        xin = [x[i] for i in inpart]
+        xout = [x[i] for i in outpart]
 
-        if isinstance(y, np.ndarray):
-            yin = y[inpart, :]
-            yout = y[outpart, :]
-        else:
-            yin = [y[i] for i in inpart]
-            yout = [y[i] for i in outpart]
+    if isinstance(y, np.ndarray):
+        yin = y[inpart, :]
+        yout = y[outpart, :]
+    else:
+        yin = [y[i] for i in inpart]
+        yout = [y[i] for i in outpart]
 
-        # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
+    # print 'in:', xin.shape[0], 'out:', xout.shape[0], 'kwargs:', kwargs
 
-        # log = logging.getLogger(PYXVAL_LOGGER)
+    # log = logging.getLogger(PYXVAL_LOGGER)
 
-        # log.debug('training fold %d' % (f + 1))
-        l = classifier.learn(xin, yin)
+    # log.debug('training fold %d' % (f + 1))
+    l = classifier.learn(xin, yin)
 
-        # log.debug('predicting fold %d' % (f + 1))
-        preds = classifier.predict(xout)
+    # log.debug('predicting fold %d' % (f + 1))
+    preds = classifier.predict(xout)
 
-        # do this after both learning and prediction just in case either performs some necessary computation
-        xtra = None
-        if extra is not None:
-            if isinstance(extra, types.StringTypes):
-                xtra = apply(getattr(classifier, extra),)
-            elif isinstance(extra, types.FunctionType):
-                xtra = extra(classifier)
-        return l, xtra, yout, preds, classifier.weights()
-
-    except KeyboardInterrupt:
-        return KeyboardInterrupt
-    except:
-        return sys.exc_info()[1]
+    # do this after both learning and prediction just in case either performs some necessary computation
+    xtra = None
+    if extra is not None:
+        if isinstance(extra, types.StringTypes):
+            xtra = apply(getattr(classifier, extra),)
+        elif isinstance(extra, types.FunctionType):
+            xtra = extra(classifier)
+    return l, xtra, yout, preds, classifier.weights()
 
 
 # implement cross-validation interface here, grid-search optional
@@ -123,10 +121,10 @@ class CrossValidator(Validator):
         assert(len(p) == l)
         return p
 
-    def crossvalidate(self, x, y, classifier_kwargs={}, extra=None):
-        return CrossValidator.validate(self, x, y, classifier_kwargs, extra)
+    def crossvalidate(self, x, y, classifier_kwargs={}, extra=None, parallel=True):
+        return CrossValidator.validate(self, x, y, classifier_kwargs, extra, parallel)
 
-    def validate(self, x, y, classifier_kwargs={}, extra=None):
+    def validate(self, x, y, classifier_kwargs={}, extra=None, parallel=True):
         '''
         Runs crossvalidation on the provided data.  The length of the :py:obj:`x` array should be identical to :py:obj:`y`
         and will be used to partition the lists by index.
@@ -153,69 +151,25 @@ class CrossValidator(Validator):
         kwargs = deepcopy(self.classifier_kwargs)
         kwargs.update(classifier_kwargs)
 
-        pool = None
+        results = farmout(
+            num=self.folds,
+            setup=lambda f: (_folder, f, partition, x, y, self.classifier_cls(**kwargs), extra),
+            worker=farmworker,
+            isresult=lambda r: isinstance(r, types.TupleType) and len(r) == 5,
+            attempts=3,
+            pickletest=self if parallel else False
+        )
 
-        try:
-            results = [None] * self.folds
-            attempts = 3
-            do_folds = xrange(self.folds)
-            for _ in xrange(attempts):
-                pool = create_pool(self)
+        stats = self.scorer_cls(**self.scorer_kwargs)
+        lret = []
+        xtra = []
 
-                for f in do_folds:
-                    results[f] = pool.apply_async(_run_instance, (
-                            f,
-                            partition,
-                            x,
-                            y,
-                            self.classifier_cls(**kwargs),
-                            extra
-                        )
-                    )
-
-                pool.close()
-                pool.join()
-
-                for f in do_folds:
-                    results[f] = results[f].get(0xFFFF) # 65535s
-
-                # raise any exceptions we see
-                if KeyboardInterrupt in results:
-                    raise KeyboardInterrupt
-                elif all([isinstance(r, types.TupleType) and len(r) == 5 for r in results]):
-                    # we're done!!!
-                    break
-                else:
-                    do_folds = [f for f, r in enumerate(results) if not isinstance(r, types.TupleType) or len(r) != 5]
-
-            excs = [e for e in results if isinstance(e, types.TupleType) and len(e) == 3 and isinstance(e, Exception)]
-            if len(excs):
-                raise excs[0]
-
-            if not all([isinstance(r, types.TupleType) and len(r) == 5 for r in results]):
-                print results
-                raise RuntimeError('error: random and unknown weirdness has occurred in your classifier')
-
-            stats = self.scorer_cls(**self.scorer_kwargs)
-            lret = []
-            xtra = []
-
-            for l, x, t, p, w in results:
-                if l is not None:
-                    lret.append(l)
-                if x is not None:
-                    xtra.append(x)
-                stats.append(t, p, w)
-
-        except KeyboardInterrupt, e:
-            if pool is not None:
-                pool.terminate()
-                pool.join()
-            if current_process().daemon:
-                return e
-            else:
-                print 'caught ^C (keyboard interrupt), exiting ...'
-                sys.exit(-1)
+        for l, x, t, p, w in results:
+            if l is not None:
+                lret.append(l)
+            if x is not None:
+                xtra.append(x)
+            stats.append(t, p, w)
 
         log.debug('finished %d-fold crossvalidation' % self.folds)
 

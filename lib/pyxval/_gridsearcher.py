@@ -28,7 +28,11 @@ from types import FunctionType, MethodType, StringTypes, TupleType
 
 import numpy as np
 
-from _common import create_pool
+try:
+    from fakemp import farmout, farmworker
+except ImportError:
+    from _fakemp import farmout, farmworker
+
 from _logging import PYXVAL_LOGGER
 from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
 from _validationresult import ValidationResult
@@ -37,19 +41,14 @@ from _validationresult import ValidationResult
 __all__ = ['GridSearcher']
 
 
-def _run_instance(i, paramlists, itervars, validator, kwargs, x, y):
-    try:
-        kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
-        log = logging.getLogger(PYXVAL_LOGGER)
-        log.debug('validating combination (%d) with args: %s' % (i + 1, str(kwargs)))
-        r = validator.validate(x, y, classifier_kwargs=kwargs)
-        log.debug('combination (%d) performance stats: %s' % (i + 1, r.stats))
-        r.kwargs = kwargs
-        return r
-    except KeyboardInterrupt, e:
-        return e
-    except:
-        return sys.exc_info()[1]
+def _gridsearcher(i, paramlists, itervars, validator, kwargs, x, y):
+    kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
+    log = logging.getLogger(PYXVAL_LOGGER)
+    log.debug('validating combination (%d) with args: %s' % (i + 1, str(kwargs)))
+    r = validator.validate(x, y, classifier_kwargs=kwargs)
+    log.debug('combination (%d) performance stats: %s' % (i + 1, r.stats))
+    r.kwargs = kwargs
+    return r
 
 
 class GridSearcher(object):
@@ -88,7 +87,7 @@ class GridSearcher(object):
         self.classifier = None
         self.__computed = False
 
-    def gridsearch(self, x, y, classifier_kwargs={}, extra=None):
+    def gridsearch(self, x, y, classifier_kwargs={}, extra=None, parallel=True):
         if extra is not None:
             if not isinstance(extra, StringTypes + FunctionType + MethodType):
                 raise ValueError('the `extra\' argument takes either a string or a function.')
@@ -117,66 +116,21 @@ class GridSearcher(object):
         assert(len(cumprod_lens) == len(paramlist_lens))
         itervars = [(i, paramlist_lens[i], cumprod_lens[i]) for i in xrange(len(cumprod_lens))]
 
-        pool = None
-
         log = logging.getLogger(PYXVAL_LOGGER)
         log.debug('beginning grid search over %d variables (%d combinations)' % (len(paramlists), totaldim))
 
-        try:
-            results = [None] * totaldim
-            attempts = 3
-            do_idxs = xrange(totaldim)
-            for _ in xrange(attempts):
-                pool = create_pool(self)
+        results = farmout(
+            num=totaldim,
+            setup=lambda i: (_gridsearcher, i, paramlists, itervars, self.validator, deepcopy(kwargs), x, y),
+            worker=farmworker,
+            isresult=lambda r: isinstance(r, ValidationResult),
+            attempts=3,
+            pickletest=self if parallel else False
+        )
 
-                for i in do_idxs:
-                    results[i] = pool.apply_async(_run_instance,
-                        (
-                            i,
-                            paramlists,
-                            itervars,
-                            self.validator,
-                            deepcopy(kwargs),
-                            x,
-                            y,
-                        )
-                    )
+        best = max(results)
 
-                pool.close()
-                pool.join()
-
-                for i in do_idxs:
-                    results[i] = results[i].get(0xFFFF) # 65535s
-
-                if KeyboardInterrupt in results:
-                    raise KeyboardInterrupt
-                elif all([isinstance(r, ValidationResult) for r in results]):
-                    # we're done! 
-                    break
-                else:
-                    # what broke? try them again
-                    do_idxs = [i for i, r in enumerate(results) if not isinstance(r, ValidationResult)]
-
-            excs = [e for e in results if isinstance(e, TupleType) and len(e) == 3 and isinstance(e, Exception)]
-            if len(excs):
-                raise excs[0]
-
-            if not all([isinstance(r, ValidationResult) for r in results]):
-                raise RuntimeError('error: random and unknown weirdness has occurred in your classifier')
-
-            best = max(results)
-
-        except KeyboardInterrupt, e:
-            if pool is not None:
-                pool.terminate()
-                pool.join()
-            if current_process().daemon:
-                return e
-            else:
-                print >> sys.stderr, 'caught ^C (keyboard interrupt), exiting...'
-                sys.exit(-1)
-
-        log.debug('finished grid search, best args: %s give stats: %s' % (r.kwargs, r.stats))
+        log.debug('finished grid search, best args: %s give stats: %s' % (best.kwargs, best.stats))
 
         # do this one more time if we get an extra
         best.extra = self.validator.validate(self, x, y, classifier_kwargs=best.kwargs, extra=extra).extra if extra is not None else None

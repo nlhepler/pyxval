@@ -15,9 +15,10 @@ setup(name='pyxval',
       author_email='nlhepler@gmail.com',
       url='http://github.com/nlhepler/pyxval',
       license='GNU GPL version 3',
-      packages=['pyxval', 'pyxval._tests'],
+      packages=['pyxval', 'pyxval._fakemp', 'pyxval._tests'],
       package_dir={
             'pyxval': 'lib/pyxval',
+            'pyxval._fakemp': 'lib/pyxval/_fakemp',
             'pyxval._tests': 'lib/pyxval/_tests'
      },
      )
