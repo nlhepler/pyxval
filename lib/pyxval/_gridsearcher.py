@@ -23,25 +23,25 @@
 import logging, sys
 
 from copy import deepcopy
-from types import FunctionType, MethodType, StringTypes, TupleType
+from types import FunctionType, MethodType
 
 import numpy as np
 
 try:
     from fakemp import farmout, farmworker
 except ImportError:
-    from _fakemp import farmout, farmworker
+    from ._fakemp import farmout, farmworker
 
-from _logging import PYXVAL_LOGGER
-from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
-from _validationresult import ValidationResult
+from ._logging import PYXVAL_LOGGER
+from ._proxyclassifierfactory import ProxyClassifierFactory, is_proxy
+from ._validationresult import ValidationResult
 
 
 __all__ = ['GridSearcher']
 
 
 def _gridsearcher(i, paramlists, itervars, validator, kwargs, x, y):
-    kwargs.update([(paramlists[j][0], paramlists[j][1][(i / den) % l]) for j, l, den in itervars])
+    kwargs.update([(paramlists[j][0], paramlists[j][1][int(i / den) % l]) for j, l, den in itervars])
     log = logging.getLogger(PYXVAL_LOGGER)
     log.debug('validating combination (%d) with args: %s' % (i + 1, str(kwargs)))
     # disable parallelization here, if it's enabled it will be done over this function
@@ -89,7 +89,7 @@ class GridSearcher(object):
 
     def gridsearch(self, x, y, classifier_kwargs={}, extra=None, parallel=True):
         if extra is not None:
-            if not isinstance(extra, StringTypes + FunctionType + MethodType):
+            if not isinstance(extra, (str, FunctionType, MethodType)):
                 raise ValueError('the `extra\' argument takes either a string or a function.')
 
         kwargs = deepcopy(self.classifier_kwargs)
@@ -107,14 +107,14 @@ class GridSearcher(object):
         # where den allows us to tick forward for each parameter j only after we've completed iterating
         # through all possible 0..j-1 parameter combinations, and a modulus by l ensures we're
         # properly wrapping around for each parameter list j.
-        paramlists = self.gridsearch_kwargs.items()
+        paramlists = list(self.gridsearch_kwargs.items())
         paramlist_lens = [1] + [len(v) for _, v in paramlists]
         cumprod_lens = np.cumprod(np.array(paramlist_lens, dtype=int)).tolist()
         totaldim = cumprod_lens.pop()
         # remove the [1] on the front, it's served its purpose
         paramlist_lens.pop(0)
         assert(len(cumprod_lens) == len(paramlist_lens))
-        itervars = [(i, paramlist_lens[i], cumprod_lens[i]) for i in xrange(len(cumprod_lens))]
+        itervars = [(i, paramlist_lens[i], cumprod_lens[i]) for i in range(len(cumprod_lens))]
 
         log = logging.getLogger(PYXVAL_LOGGER)
         log.debug('beginning grid search over %d variables (%d combinations)' % (len(paramlists), totaldim))

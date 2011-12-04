@@ -20,7 +20,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import copy_reg, types
+import copyreg, types
 
 
 _proxy_hdr = 'Proxy'
@@ -65,8 +65,8 @@ def _create_proxy(classifier_cls, learn_func, predict_func, weights_func):
 
     return proxy_class
 
-copy_reg.constructor(_create_proxy)
-copy_reg.pickle(_dynamic_proxy_class, _dynamic_proxy_class.__reduce__, _create_proxy)
+copyreg.constructor(_create_proxy)
+copyreg.pickle(_dynamic_proxy_class, _dynamic_proxy_class.__reduce__, _create_proxy)
 
 
 class ProxyClassifierFactory(object):
@@ -94,7 +94,7 @@ class ProxyClassifierFactory(object):
             learn_func = ('learn', 'compute')
         elif isinstance(learn_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
             learn_func = (learn_func.__name__,)
-        elif isinstance(learn_func, types.StringTypes):
+        elif isinstance(learn_func, str):
             learn_func = (learn_func,)
         else:
             raise ValueError('learn_func has an unhandled type %s' % type(learn_func))
@@ -103,7 +103,7 @@ class ProxyClassifierFactory(object):
             predict_func = ('predict', 'pred')
         elif isinstance(predict_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
             predict_func = (predict_func.__name__,)
-        elif isinstance(predict_func, types.StringTypes):
+        elif isinstance(predict_func, str):
             predict_func = (predict_func,)
         else:
             raise ValueError('predict_func has an unhandled type %s' % type(predict_func))
@@ -112,7 +112,7 @@ class ProxyClassifierFactory(object):
             weights_func = None # ('weights',) # if weights is None, don't bother looking
         elif isinstance(weights_func, types.MethodType) or isinstance(learn_func, types.FunctionType):
             weights_func = (weights_func.__name__,)
-        elif isinstance(weights_func, types.StringTypes):
+        elif isinstance(weights_func, str):
             weights_func = (weights_func,)
         else:
             raise ValueError('weights_func has an unhandled type %s' % type(weights_func))

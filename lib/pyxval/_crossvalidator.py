@@ -32,13 +32,13 @@ import numpy as np
 try:
     from fakemp import farmout, farmworker
 except ImportError:
-    from _fakemp import farmout, farmworker
+    from ._fakemp import farmout, farmworker
 
-from _discreteperfstats import DiscretePerfStats
-from _logging import PYXVAL_LOGGER
-from _proxyclassifierfactory import ProxyClassifierFactory, is_proxy
-from _validator import Validator
-from _validationresult import ValidationResult
+from ._discreteperfstats import DiscretePerfStats
+from ._logging import PYXVAL_LOGGER
+from ._proxyclassifierfactory import ProxyClassifierFactory, is_proxy
+from ._validator import Validator
+from ._validationresult import ValidationResult
 
 
 __all__ = ['CrossValidator']
@@ -47,8 +47,8 @@ __all__ = ['CrossValidator']
 def _folder(f, partition, x, y, classifier, extra):
     nrow = len(x)
 
-    inpart = [i for i in xrange(nrow) if partition[i] != f]
-    outpart = [i for i in xrange(nrow) if partition[i] == f]
+    inpart = [i for i in range(nrow) if partition[i] != f]
+    outpart = [i for i in range(nrow) if partition[i] == f]
 
     if isinstance(x, np.ndarray):
         xin = x[inpart, :]
@@ -77,7 +77,7 @@ def _folder(f, partition, x, y, classifier, extra):
     # do this after both learning and prediction just in case either performs some necessary computation
     xtra = None
     if extra is not None:
-        if isinstance(extra, types.StringTypes):
+        if isinstance(extra, str):
             xtra = apply(getattr(classifier, extra),)
         elif isinstance(extra, types.FunctionType):
             xtra = extra(classifier)
@@ -113,9 +113,9 @@ class CrossValidator(Validator):
 
     @staticmethod
     def __partition(l, folds):
-        npf = int(floor(l / folds)) # num per fold
+        npf = int(l / folds) # num per fold
         r = l % folds
-        p = list(chain(*[[i] * npf for i in xrange(folds)])) + range(r)
+        p = list(chain(*([i] * npf for i in range(folds)))) + list(range(r))
         shuffle(p)
         assert(len(p) == l)
         return p
@@ -134,7 +134,7 @@ class CrossValidator(Validator):
         :returns: @todo figure this out
         '''
         if extra is not None:
-            if not isinstance(extra, types.StringTypes) and \
+            if not isinstance(extra, str) and \
                not isinstance(extra, types.MethodType) and \
                not isinstance(extra, types.FunctionType):
                 raise ValueError('the `extra\' argument takes either a string or a method.')
@@ -154,7 +154,7 @@ class CrossValidator(Validator):
             num=self.folds,
             setup=lambda f: (_folder, f, partition, x, y, self.classifier_cls(**kwargs), extra),
             worker=farmworker,
-            isresult=lambda r: isinstance(r, types.TupleType) and len(r) == 5,
+            isresult=lambda r: isinstance(r, tuple) and len(r) == 5,
             attempts=3,
             pickletest=self if parallel else False
         )

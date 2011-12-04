@@ -6,7 +6,7 @@ from os import getenv
 from sys import exc_info, exit as sys_exit, stderr
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -57,7 +57,7 @@ class FakePool(object):
 
     @staticmethod
     def apply_async(f, args):
-        return FakeResult(apply(f, args))
+        return FakeResult(f(*args))
 
     @staticmethod
     def terminate():
@@ -123,8 +123,8 @@ def farmout(num, setup, worker, isresult, attempts=3, pickletest=None):
         if pickletest is None:
             pickletest = worker
         results = [None] * num
-        undone = xrange(num)
-        for _ in xrange(attempts):
+        undone = range(num)
+        for _ in range(attempts):
             pool = create_pool(pickletest)
 
             for i in undone:
@@ -152,14 +152,14 @@ def farmout(num, setup, worker, isresult, attempts=3, pickletest=None):
 
         return results
 
-    except KeyboardInterrupt, e:
+    except KeyboardInterrupt as e:
         if pool is not None:
             pool.terminate()
             pool.join()
         if current_process().daemon:
             return e
         else:
-            print 'caught ^C (keyboard interrupt), exiting ...'
+            print('caught ^C (keyboard interrupt), exiting ...')
             sys_exit(-1)
 
 

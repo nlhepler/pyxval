@@ -22,23 +22,23 @@
 
 import numpy as np
 
-from _basescorer import BaseScorer
-from _normalvalue import NormalValue
+from ._basestats import BaseStats
+from ._normalvalue import NormalValue
 
 
 __all__ = ['ContinuousPerfStats']
 
 
-class ContinuousPerfStats(BaseScorer):
+class ContinuousPerfStats(BaseStats):
 
-    RBARSQUARED, RSQUARED, RMSE = xrange(3)
+    RBARSQUARED, RSQUARED, RMSE = range(3)
 
     def __init__(self, optstat=None):
 
         if optstat is None:
             optstat = ContinuousPerfStats.RMSE
 
-        if optstat not in xrange(7):
+        if optstat not in range(7):
             raise ValueError('ContinuousPerfStats optstat must be one of ContinuousPerfStats.{RBARSQUARED, RSQUARED, RMSE}')
 
         self.optstat = optstat
@@ -83,9 +83,9 @@ class ContinuousPerfStats(BaseScorer):
 
     def tolist(self):
         return [
-            (u'R\u0304\u00b2', self.rbar2),
-            (u'R\u00b2', self.r2),
-            (u'RMSE', self.rmse)
+            ('R\u0304\u00b2', self.rbar2),
+            ('R\u00b2', self.r2),
+            ('RMSE', self.rmse)
         ]
 
     def todict(self):
@@ -97,18 +97,5 @@ class ContinuousPerfStats(BaseScorer):
     def __str__(self):
         return str(ContinuousPerfStats.todict(self))
 
-    def __eq__(self, other):
-        return isinstance(other, ContinuousPerfStats) and cmp(self, other) == 0
-
-    def __cmp__(self, other):
-        if other is None:
-            return 1
-        assert(isinstance(other, ContinuousPerfStats))
-        if self.get(self.optstat) == other.get(other.optstat):
-            return 0
-        elif self.get(self.optstat) < other.get(other.optstat):
-            return -1
-        return 1
-
     def __unicode__(self):
-        return unicode(ContinuousPerfStats.todict(self))
+        return str(ContinuousPerfStats.todict(self))

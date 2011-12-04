@@ -41,6 +41,21 @@ class ValidationResult(object):
     def __eq__(self, other):
         return isinstance(other, ValidationResult) and id(self) == id(other)
 
-    def __cmp__(self, other):
+    def __ge__(self, other):
         assert(isinstance(other, ValidationResult))
-        return cmp(self.stats, other.stats)
+        return self.stats >= other.stats
+
+    def __gt__(self, other):
+        assert(isinstance(other, ValidationResult))
+        return self.stats > other.stats
+
+    def __le__(self, other):
+        assert(isinstance(other, ValidationResult))
+        return self.stats <= other.stats
+
+    def __lt__(self, other):
+        assert(isinstance(other, ValidationResult))
+        return self.stats < other.stats
+
+    def __ne__(self, other):
+        return not isinstance(other, ValidationResult) or id(self) != id(other)

@@ -22,14 +22,14 @@
 
 import numpy as np
 
-from _basescorer import BaseScorer
-from _normalvalue import NormalValue
+from ._basestats import BaseStats
+from ._normalvalue import NormalValue
 
 
 __all__ = ['DiscretePerfStats']
 
 
-class DiscretePerfStats(BaseScorer):
+class DiscretePerfStats(BaseStats):
 
     ACCURACY            = 0
     PPV, PRECISION      = 1, 1
@@ -44,7 +44,7 @@ class DiscretePerfStats(BaseScorer):
         if optstat is None:
             optstat = DiscretePerfStats.MINSTAT
 
-        if optstat not in xrange(7):
+        if optstat not in range(7):
             raise ValueError('DiscretePerfStats optstat must be one of DiscretePerfStats.{ACCURACY, PPV, PRECISION, NPV, SENSITIVITY, RECALL, SPECIFICITY, TNR, FSCORE, MINSTAT}')
 
         self.optstat = optstat
@@ -108,13 +108,13 @@ class DiscretePerfStats(BaseScorer):
 
     def tolist(self):
         return [
-            (u'Accuracy', self.accuracy),
-            (u'PPV', self.ppv),
-            (u'NPV', self.npv),
-            (u'Sensitivity', self.sensitivity),
-            (u'Specificity', self.specificity),
-            (u'F-score', self.fscore),
-            (u'Minstat', self.minstat)
+            ('Accuracy', self.accuracy),
+            ('PPV', self.ppv),
+            ('NPV', self.npv),
+            ('Sensitivity', self.sensitivity),
+            ('Specificity', self.specificity),
+            ('F-score', self.fscore),
+            ('Minstat', self.minstat)
         ]
 
     def todict(self):
@@ -130,7 +130,7 @@ class DiscretePerfStats(BaseScorer):
         tps = truth > 0.
         pps = preds > 0.
                                                                # true pos    true neg        false pos     false neg
-        tp, tn, fp, fn = map(lambda a: np.sum(np.multiply(*a)), [(tps, pps), (1-tps, 1-pps), (1-tps, pps), (tps, 1-pps)])
+        tp, tn, fp, fn = [np.sum(np.multiply(*a)) for a in [(tps, pps), (1-tps, 1-pps), (1-tps, pps), (tps, 1-pps)]]
 
         return tp, tn, fp, fn
 
@@ -140,18 +140,5 @@ class DiscretePerfStats(BaseScorer):
     def __str__(self):
         return str(DiscretePerfStats.todict(self))
 
-    def __eq__(self, other):
-        return isinstance(other, DiscretePerfStats) and cmp(self, other) == 0
-
-    def __cmp__(self, other):
-        if other is None:
-            return 1
-        assert(isinstance(other, DiscretePerfStats))
-        if self.get(self.optstat) == other.get(other.optstat):
-            return 0
-        elif self.get(self.optstat) < other.get(other.optstat):
-            return -1
-        return 1
-
     def __unicode__(self):
-        return unicode(DiscretePerfStats.todict(self))
+        return str(DiscretePerfStats.todict(self))

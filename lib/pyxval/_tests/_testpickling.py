@@ -33,13 +33,13 @@ __author__ = 'Lance Hepler'
 import unittest
 
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
 from pyxval import CrossValidator, DiscretePerfStats, GridSearcher, NestedCrossValidator
 
-from _optimist import Optimist
+from ._optimist import Optimist
 
 
 __all__ = ['TestPickling']
@@ -55,7 +55,7 @@ class TestPickling(unittest.TestCase):
         xgser = GridSearcher(
                 Optimist,
                 CrossValidator,
-                gridsearch_kwargs={ 'c': xrange(5) },
+                gridsearch_kwargs={ 'c': range(5) },
                 validator_kwargs={ 'folds': 10 },
                 learn_func=Optimist.train
         )
@@ -71,7 +71,7 @@ class TestPickling(unittest.TestCase):
         nxvalor = NestedCrossValidator(
                 Optimist,
                 10,
-                { 'c': xrange(5) },
+                { 'c': range(5) },
                 validator_cls=CrossValidator,
                 validator_kwargs={
                     'folds': 9,

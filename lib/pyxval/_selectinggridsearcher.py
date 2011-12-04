@@ -23,8 +23,8 @@
 from sys import stderr
 from copy import deepcopy
 
-from _discreteperfstats import DiscretePerfStats
-from _gridsearcher import GridSearcher
+from ._discreteperfstats import DiscretePerfStats
+from ._gridsearcher import GridSearcher
 
 
 __all__ = ['SelectingGridSearcher']
@@ -64,12 +64,12 @@ class SelectingGridSearcher(GridSearcher):
 
     def subset(self, x):
         if self.__selected == False:
-            raise StandardError('Selection hasn\'t yet been performed.')
+            raise Exception('Selection hasn\'t yet been performed.')
         return self.selector.subset(x)
 
     def features(self):
         if self.__selected == False:
-            raise StandardError('Selection hasn\'t yet been performed.')
+            raise Exception('Selection hasn\'t yet been performed.')
         return self.selector.features()
 
     def gridsearch(self, x, y, classifier_kwargs={}, extra=None):
@@ -86,6 +86,6 @@ class SelectingGridSearcher(GridSearcher):
 
     def predict(self, x):
         if self.__selected == False:
-            raise StandardError('You need to call learn() or select() before you can predict with this classifier.')
+            raise Exception('You need to call learn() or select() before you can predict with this classifier.')
         x = self.selector.subset(x)
         return super(SelectingGridSearcher, self).predict(x)

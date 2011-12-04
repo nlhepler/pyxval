@@ -37,7 +37,7 @@ import numpy as np
 
 from pyxval import CrossValidator, DiscretePerfStats, NestedCrossValidator
 
-from _optimist import Optimist
+from ._optimist import Optimist
 
 
 __all__ = ['TestNestedCrossValidator']
@@ -47,7 +47,7 @@ class TestNestedCrossValidator(unittest.TestCase):
 
     def setUp(self):
         self.folds = 10
-        self.gridsearch_kwargs = { 'c': xrange(5) }
+        self.gridsearch_kwargs = { 'c': range(5) }
         self.validator_kwargs = {
             'folds': self.folds-1,
             'scorer_cls': DiscretePerfStats,

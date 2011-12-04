@@ -23,9 +23,9 @@
 from copy import deepcopy
 from types import FunctionType, MethodType
 
-from _crossvalidator import CrossValidator
-from _gridsearcher import GridSearcher
-from _discreteperfstats import DiscretePerfStats
+from ._crossvalidator import CrossValidator
+from ._gridsearcher import GridSearcher
+from ._discreteperfstats import DiscretePerfStats
 
 
 __all__ = ['NestedCrossValidator']

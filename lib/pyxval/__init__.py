@@ -22,15 +22,15 @@
 
 __version__ = '0.9.2'
 
-from _continuousperfstats import *
-from _crossvalidator import *
-from _discreteperfstats import *
-from _gridsearcher import *
-from _logging import *
-from _nestedcrossvalidator import *
-from _normalvalue import *
-from _selectinggridsearcher import *
-from _selectingnestedcrossvalidator import *
+from ._continuousperfstats import *
+from ._crossvalidator import *
+from ._discreteperfstats import *
+from ._gridsearcher import *
+from ._logging import *
+from ._nestedcrossvalidator import *
+from ._normalvalue import *
+from ._selectinggridsearcher import *
+from ._selectingnestedcrossvalidator import *
 
 __all__ = ['PYXVAL_LOGGER']
 __all__ += _continuousperfstats.__all__
@@ -44,7 +44,7 @@ __all__ += _selectingnestedcrossvalidator.__all__
 
 def test(verbosity=1):
     import unittest as _ut
-    import _tests
+    from . import _tests
     suite = _ut.TestLoader().loadTestsFromModule(_tests)
     _ut.TextTestRunner(verbosity=verbosity).run(suite)
 

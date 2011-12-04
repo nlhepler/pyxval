@@ -22,9 +22,9 @@
 
 from copy import deepcopy
 
-from _crossvalidator import CrossValidator
-from _discreteperfstats import DiscretePerfStats
-from _selectinggridsearcher import SelectingGridSearcher
+from ._crossvalidator import CrossValidator
+from ._discreteperfstats import DiscretePerfStats
+from ._selectinggridsearcher import SelectingGridSearcher
 
 
 __all__ = ['SelectingNestedCrossValidator']

@@ -20,23 +20,36 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-'''
-.. container:: creation-info
-
-Created on 10/1/11
-
-@author: Brent Payne
-'''
-
-__author__ = 'Brent Payne'
+from ._basescorer import BaseScorer
 
 
-from ._testcrossvalidator import TestCrossValidator
-from ._testgridsearcher import TestGridSearcher
-from ._testnestedcrossvalidator import TestNestedCrossValidator
-from ._testpickling import TestPickling
+class BaseStats(BaseScorer):
 
-__all__ = []
-__all__ += _testcrossvalidator.__all__
-__all__ += _testgridsearcher.__all__
-__all__ += _testpickling.__all__
+    def __init__(self):
+        super(self, BaseStats).__init__()
+        self.optstat = None
+
+    def get(self, stat=None):
+        raise NotImplementedError
+
+    def __eq__(self, other):
+        return isinstance(other, type(self)) and self.get(self.optstat) == other.get(other.optstat)
+
+    def __ge__(self, other):
+        assert(isinstance(other, type(self)))
+        return self.get(self.optstat) >= other.get(other.optstat)
+
+    def __gt__(self, other):
+        assert(isinstance(other, type(self)))
+        return self.get(self.optstat) > other.get(other.optstat)
+
+    def __le__(self, other):
+        assert(isinstance(other, type(self)))
+        return self.get(self.optstat) <= other.get(other.optstat)
+
+    def __lt__(self, other):
+        assert(isinstance(other, type(self)))
+        return self.get(self.optstat) < other.get(other.optstat)
+
+    def __ne__(self, other):
+        return not isinstance(other, type(self)) or self.get(self.optstat) != other.get(other.optstat)

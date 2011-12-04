@@ -39,7 +39,7 @@ from pyxval import DiscretePerfStats
 from pyxval import CrossValidator
 from pyxval import GridSearcher
 
-from _optimist import Optimist
+from ._optimist import Optimist
 
 
 __all__ = ['TestGridSearcher']
@@ -57,7 +57,7 @@ class TestGridSearcher(unittest.TestCase):
         xgser = GridSearcher(
             Optimist,
             CrossValidator,
-            gridsearch_kwargs={ 'c': xrange(5) },
+            gridsearch_kwargs={ 'c': range(5) },
             validator_kwargs={
                 'folds': 10,
                 'scorer_cls': DiscretePerfStats,

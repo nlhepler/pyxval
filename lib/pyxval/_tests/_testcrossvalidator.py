@@ -38,7 +38,7 @@ import numpy as np
 from pyxval import CrossValidator
 from pyxval import DiscretePerfStats
 
-from _optimist import Optimist
+from ._optimist import Optimist
 
 
 __all__ = ['TestCrossValidator']
