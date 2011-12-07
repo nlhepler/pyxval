@@ -170,7 +170,7 @@ class CrossValidator(Validator):
                 xtra.append(x)
             stats.append(t, p, w)
 
-        log.debug('finished %d-fold crossvalidation' % self.folds)
+        log.debug('finished %d-fold crossvalidation, performance stats: %s' % (self.folds, stats))
 
         return ValidationResult(
             lret if len(lret) else None,
