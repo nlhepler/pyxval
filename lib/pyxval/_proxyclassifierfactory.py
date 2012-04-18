@@ -20,7 +20,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import copyreg, types
+from __future__ import division, print_function
+
+import types
+
+from six.moves import copyreg
 
 
 _proxy_hdr = 'Proxy'
