@@ -22,6 +22,8 @@
 
 from __future__ import division, print_function
 
+from six import u
+
 import numpy as np
 
 from ._basestats import BaseStats
@@ -85,9 +87,9 @@ class ContinuousPerfStats(BaseStats):
 
     def tolist(self):
         return [
-            ('R\u0304\u00b2', self.rbar2),
-            ('R\u00b2', self.r2),
-            ('RMSE', self.rmse)
+            (u('R\u0304\u00b2'), self.rbar2),
+            (u('R\u00b2'), self.r2),
+            (u('RMSE'), self.rmse)
         ]
 
     def todict(self):

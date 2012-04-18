@@ -27,7 +27,7 @@ import logging, sys, types
 from copy import deepcopy
 from itertools import chain
 from math import floor
-from random import shuffle
+from random import shuffle, random
 
 import numpy as np
 
@@ -118,7 +118,7 @@ class CrossValidator(Validator):
         npf = int(l / folds) # num per fold
         r = l % folds
         p = list(chain(*([i] * npf for i in range(folds)))) + list(range(r))
-        shuffle(p)
+        shuffle(p, random=random)
         assert(len(p) == l)
         return p
 
@@ -149,6 +149,8 @@ class CrossValidator(Validator):
         log.debug('beginning %d-fold crossvalidation' % self.folds)
 
         partition = CrossValidator.__partition(len(x), self.folds)
+        # log.debug('partition assignments: %s' % str(partition))
+
         kwargs = deepcopy(self.classifier_kwargs)
         kwargs.update(classifier_kwargs)
 
